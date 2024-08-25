@@ -54,3 +54,14 @@ setTimeoutPromisified(3000).then(functionToCallback);
 //    - It executes the async operation (wating, IO operation , network call etc.) with the provide wait time as arguement.
 //    - once the waiting is completed, it calls a 'resolve' object/function. This 'resolve' will actually be the function that is passed in the 'then()'
 ```
+
+## DOM Manipulation
+
+- DOM = Document Object Model
+- Represents the structure of the webpage as a 'tree of objects'
+- This was used to create dynamic website before React is included.
+- DOM allows manipulation of structure and content of the webpages dynamically.
+
+![Dom_Structure](./images/DOM_01.png);
+
+## NODEJS
