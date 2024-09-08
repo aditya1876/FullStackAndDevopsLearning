@@ -104,8 +104,225 @@ setTimeoutPromisified(3000).then(functionToCallback);
   - This adds a folder `node_modules` in the project folder. node_modules contains the code and dependencies of the package itself.
 - Setup project - `npm install`
 
+### Some concepts in node.js/ javascript
+
+```javascript
+let x = '{"a": "test", "b":"other"}';
+typeof x; //string
+
+let y = JSON.parse(x); //convert string to json
+typeof y; //object
+console.log(y.a); //test
+console.log(x.a); //undefined
+
+let z = JSON.stringify(y); //convert json to string
+typeof z; //string
+console.log(z.b); //undefined
+console.log(y.b); //other
+```
+
 ## HTTP / HTTPS SERVERS
 
 - whenever we use https, port is set to 443 by default
 - whenever we use http, port is set to 80 by default
 - whenever we use ssh, port is set to 22 by default
+
+### Express
+
+- Js library that lets us create http servers
+- Routes: GET, POST, PUT, DELETE etc
+- Boilerplate code for express server
+
+```javascript
+const express = require("express");
+const app = express(); //initialize the app
+
+app.use(express.json()); //allows access to request body
+
+//APPLICATION LOGIC
+//some code
+
+//ROUTE HANDLERS
+app.get("/", function (req, res){
+  console.log("welcome");
+  res.status(200).json("{
+    "msg": "Welcome to the app!",
+  })
+});
+
+//Dynamic route parameters in URL
+app.get("/add/:a/:b", function(req, res){
+  console.log("This is how to read dynamic routes");
+  const a = req.params.a;
+  const b = req.params.b;
+
+  res.send(200).json("sum": (parseInt(a)+parseInt(b)));
+})
+
+app.post("/create-entry", function(req, res){
+  console.log("In Post route");
+  let data_id = req.query.id; //when url is - https://myapp/create-entry?id=123
+  let data_content = req.body; //when body has some data
+
+  res.code(200).send(`Successfully created entry with id: ${id} and data: ${data}`);
+});
+
+//LISTEN ON PORT
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server started on port: ${PORT}`);
+})
+
+```
+
+### Middlewares
+
+- Middlewares are functions that are usually common functions in the server that can handle some common tasks.
+- Middlewares need to have next() in their declaration.
+- 2 ways to declare:
+  - Like a normal function (with additional next() arguement)
+  - Like `app.use()`
+- Any route below the `app.use()` middleware will use the middleware by default.
+- Error middlewares:
+  - Special type of middleware.
+  - Declared below all the routes.
+  - Express will ensure this middleware is run whenever uncaught exception occurs
+  - This middleware needs to have an additional arguement `err` in the declaration.
+
+```javascript
+const express = require("express");
+const app = express();
+
+app.use(express.json());
+
+//APPLICATION LOGIC
+let noOfRequests = 0;
+let loggedIn = False;
+
+//MIDDLEWARES
+function getWelcomeMessage(req, res, next) {
+  console.log("Welcome message from the middleware");
+  next();
+}
+
+function getRequestCount(req, res, next) {
+  noOfRequests = noOfRequests + 1;
+}
+
+function isLoggedIn(req, res, next) {
+  if (loggedIn) {
+    console.log("User is logged in. Continue...");
+    next(); //this call is necessary for the control to go to next steps
+  } else {
+    res
+      .status(401)
+      .send("User is not logged in or is unauthorized. Terminate code here.");
+  }
+}
+
+//ROUTES
+//METHOD 1 - If middleware function is not passed, it will not be called.
+app.get("/", getWelcomeMessage(), function (req, res) {
+  app.status(200).send("Hello!");
+});
+
+//METHOD 2 - All routes below the app.use() call will use the middleware passed here. The Routes do not need to call the middleware anymore
+app.use(getRequestCount());
+
+//below route calls getRequestCount automatically. getWelcomeMessage is not called.
+app.get("/generic-data", function (req, res) {
+  //get the request count after incrementing the counter in getRequestCount() middleware
+  console.log(`This is request no: ${noOfRequests} to the server`);
+
+  app.status(200).send("Showing generic content");
+});
+
+app.use(isLoggedIn());
+
+//below route calls getRequestCount() and isLoggedIn() automatically.
+app.get("/get-my-data", function (req, res) {
+  //Below code is run only if both getRequestCount and isLoggedIn() run successfully.
+  console.log("Showing only user specific data as the user is logged in");
+});
+
+//below route triggers error (Make `loggedIn=True`) after running getRequestCount and isLoggedIn()
+app.get("/trigger-error", function(req, res){
+  console.log("Triggering error. The error middleware will be called automatically");
+  Throw new Error();
+})
+
+//ERROR MIDDLEWARE
+function catchAllUncaughtExceptions(err, req, res, next){
+  console.log("Some uncaught exception occured");
+}
+
+//LISTEN TO PORT
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port: ${PORT}`);
+});
+```
+
+### Some API
+
+- Some webpages send background requests after the main call.
+- Fetch
+
+```html
+<html>
+  <head> </head>
+  <body>
+    <div id="posts"></div>
+    <script>
+      async function getRecentPost() {
+        const response = await fetch(
+          "https://jsonplaceholder.typicode.com/posts/1",
+        );
+        const data = await response.json();
+        console.log(data);
+        document.getElementById("posts").innerHTML = data.title;
+      }
+      getRecentPost();
+    </script>
+  </body>
+</html>
+```
+
+- Fetch can also be used to make post calls
+
+```javascript
+async function sendPostRequest() {
+  const response = await fetch("https://jsonplaceholder.typicode.com/posts/1", {
+    method: POST,
+    headers: {
+      "Cookie": "tersitn",
+      "content-Type":"application/json"
+    }
+    ...(more details)
+  });
+}
+```
+
+- AXIOS (external library)
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.6/axios.min.js"></script>
+  </head>
+
+  <body>
+    <div id="posts"></div>
+    <script>
+      async function fetchPosts() {
+        const res = await axios.get(
+          "https://jsonplaceholder.typicode.com/posts/1",
+        );
+        document.getElementById("posts").innerHTML = res.data.title;
+      }
+      fetchPosts();
+    </script>
+  </body>
+</html>
+```
