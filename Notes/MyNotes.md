@@ -9,6 +9,55 @@ MYNUMBER=100 node index.js
 #  Now read the env variable in the script as: console.log(process.env.MYNUMBER)
 ```
 
+## MISC
+
+- Use <https://httpdump.app/> to create fake endpoints to check your api/ routes.
+
+## Javascript Basics
+
+- Maps:
+
+```javascript
+//double each element
+const input = [1, 2, 3, 4, 5];
+
+function transform(i) {
+  return i * 2;
+}
+
+const output = input.map(transform);
+console.log(output);
+```
+
+- Filters:
+
+```javascript
+//filter and display only even values
+const input = [1, 2, 3, 4, 5, 6, 7, 8];
+
+function myFilter(i) {
+  if (i % 2 == 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+const output = input.filter(myFilter);
+console.log(output);
+
+//alternate way using anonymous function
+const output2 = input.filter((n) => {
+  if (n % 2 == 0) {
+    return true;
+  } else {
+    return false;
+  }
+});
+
+console.log(ouptut2);
+```
+
 ## Async Functions
 
 - Examples - IO Operations(read/ writing to files), timeout/ wait/ timing operations, HTTP Requests
@@ -197,7 +246,7 @@ app.use(express.json());
 
 //APPLICATION LOGIC
 let noOfRequests = 0;
-let loggedIn = False;
+let loggedIn = false;
 
 //MIDDLEWARES
 function getWelcomeMessage(req, res, next) {
@@ -207,6 +256,7 @@ function getWelcomeMessage(req, res, next) {
 
 function getRequestCount(req, res, next) {
   noOfRequests = noOfRequests + 1;
+  next();
 }
 
 function isLoggedIn(req, res, next) {
@@ -222,37 +272,39 @@ function isLoggedIn(req, res, next) {
 
 //ROUTES
 //METHOD 1 - If middleware function is not passed, it will not be called.
-app.get("/", getWelcomeMessage(), function (req, res) {
-  app.status(200).send("Hello!");
+app.get("/", getWelcomeMessage, function (req, res) {
+  res.status(200).send("Hello!");
 });
 
 //METHOD 2 - All routes below the app.use() call will use the middleware passed here. The Routes do not need to call the middleware anymore
-app.use(getRequestCount());
+app.use(getRequestCount);
 
 //below route calls getRequestCount automatically. getWelcomeMessage is not called.
 app.get("/generic-data", function (req, res) {
   //get the request count after incrementing the counter in getRequestCount() middleware
   console.log(`This is request no: ${noOfRequests} to the server`);
-
-  app.status(200).send("Showing generic content");
+  res.status(200).send("Showing generic content");
 });
 
-app.use(isLoggedIn());
+app.use(isLoggedIn);
 
 //below route calls getRequestCount() and isLoggedIn() automatically.
 app.get("/get-my-data", function (req, res) {
   //Below code is run only if both getRequestCount and isLoggedIn() run successfully.
   console.log("Showing only user specific data as the user is logged in");
+  res.status(200).json({ msg: "user specific data for logged in user" });
 });
 
 //below route triggers error (Make `loggedIn=True`) after running getRequestCount and isLoggedIn()
-app.get("/trigger-error", function(req, res){
-  console.log("Triggering error. The error middleware will be called automatically");
-  Throw new Error();
-})
+app.get("/trigger-error", function (req, res) {
+  console.log(
+    "Triggering error. The error middleware will be called automatically",
+  );
+  throw new Error();
+});
 
 //ERROR MIDDLEWARE
-function catchAllUncaughtExceptions(err, req, res, next){
+function catchAllUncaughtExceptions(err, req, res, next) {
   console.log("Some uncaught exception occured");
 }
 
@@ -325,4 +377,112 @@ async function sendPostRequest() {
     </script>
   </body>
 </html>
+```
+
+### Connecting Front-End and Back-End
+
+#### Different domains for FrontEnd and Backend
+
+```javascript
+//FOLDER STRUCTURE
+/*
+app
+  public/
+    index.html ----> frontend
+  index.js ---> backend
+  package.json
+  package-lock.json
+*/
+```
+
+- Serving Backend
+
+  - Navigate to project folder and run --> `node index.js`
+  - The server will start running on the port specified in index.js --> `http://localhost:PORT`
+
+```
+
+```
+
+- Serving Frontend
+  - Navigate to public folder and run --> `npx serve`
+  - The front end (index.html) will run localhost at the port specified in the output of the command above.
+
+#### Same domain for Frontend and Backend
+
+```javascript
+//FOLDER STRUCTURE
+/*
+app
+  index.html ----> frontend
+  index.js ---> backend
+  package.json
+  package-lock.json
+*/
+
+
+//index.js
+const express = require("experess");
+
+const app = express();
+
+app.get("/", function(req, res)=>{
+  res.sendFile(process.env.PWD+"/index.html"); //--> Sends the html on the same domain as the backend server
+})
+
+app.listen(3000);
+
+//both front end and back end are on http://localhost:3000
+```
+
+### CORS
+
+- CORS - Cross Origin Request Sharing
+- This is a security feature that controls how resource on one webserver can be requested from another domain.
+- Example:
+  - User goes to <www.google.com/>
+  - The page triggers a `background` request to another domain - <www.api.facebook.com/> ---> should not be allowed by <www.facebook.com>
+  - But background request to <www.api.google.com/> should be allowed (as it is from google itself)
+- Browser by default inserts `Referrer` into the background request when such background requests are send
+- By default such cross origin requests(specially post or put requests) are denied by the called server.
+- But most modern sites have different servers for frontend and backend code. In this case, we need to allow background requests between the two.
+- If front-end and back-end are in same domain, then CORS issues will not happen(cors middleware is not required). Requests are accepted by default.
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.6/axios.min.js"></script>
+  </head>
+
+  <body>
+    <script>
+      async function fetchPosts() {
+        const res = await axios.post("https://api.anotherDomain.com/", {
+          Authorization: "TestAPIKey",
+        });
+      }
+    </script>
+  </body>
+</html>
+```
+
+```javascript
+//index.js (backend code for accepting background reqests from certain domains only)
+const express = require("express");
+const cors = require("cors"); //---> Import the cors library. Need to do 'npm install cors'
+
+const app = express();
+
+app.use(express.json())
+//app.use(cors()) //---> allows background requests from any domains.
+app.use(cors({
+  domains: ["http://google.com","http://facebook.com"] //---> domains that are allowed to make background request
+}));
+
+app.get("/", function(req, res_{
+  console.log("Welcome!");
+}));
+
+app.listen(3000);
 ```
