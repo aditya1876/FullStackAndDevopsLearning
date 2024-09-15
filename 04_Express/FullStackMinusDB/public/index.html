@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Welcome Site!</title>
+    <link href="css/style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div>
+      <input
+        id="id_username"
+        type="text"
+        name="username"
+        placeholder="username"
+      />
+      <input
+        id="id_password"
+        type="text"
+        name="password"
+        placeholder="password"
+      />
+      <button onclick="signup()">Sign Up</button>
+      <button onclick="signin()">Sign In</button>
+    </div>
+    <div>
+      <span>
+        User Information:
+        <span id="id_userInfo"></span>
+      </span>
+    </div>
+    <div>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </body>
+</html>
