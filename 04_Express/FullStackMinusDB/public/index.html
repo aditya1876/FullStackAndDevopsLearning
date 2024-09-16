@@ -6,6 +6,51 @@
     <title>My Welcome Site!</title>
     <link href="css/style.css" rel="stylesheet" />
   </head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.7/axios.min.js"></script>
+
+  <script>
+    async function signup() {
+      const username = document.getElementById("id_username").value;
+      const password = document.getElementById("id_password").value;
+
+      await axios.post("http://localhost:3000/signup", {
+        username: username,
+        password: password,
+      });
+    }
+
+    async function signin() {
+      const username = document.getElementById("id_username").value;
+      const password = document.getElementById("id_password").value;
+
+      const response = await axios.post("http://localhost:3000/signin", {
+        username: username,
+        password: password,
+      });
+
+      localStorage.setItem("authorization", response.data.token);
+    }
+
+    async function getUserInformation() {
+      const response = await axios.get("http://localhost:3000/me", {
+        headers: {
+          authorization: localStorage.getItem("authorization"),
+        },
+      });
+
+      document.getElementById("id_userInfo").innerHTML =
+        "Username: " +
+        response.data.username +
+        " Password: " +
+        response.data.password;
+    }
+    getUserInformation();
+
+    async function logout() {
+      localStorage.removeItem("authorization");
+    }
+  </script>
+
   <body>
     <div>
       <input
@@ -26,7 +71,7 @@
     <div>
       <span>
         User Information:
-        <span id="id_userInfo"></span>
+        <div id="id_userInfo"></div>
       </span>
     </div>
     <div>

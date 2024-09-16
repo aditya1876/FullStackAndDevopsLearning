@@ -26,6 +26,7 @@ function auth(req, res, next) {
         message: "User not found. Unauthorized",
       });
     } else {
+      console.log("User Auth successful.");
       req.user = decodedUser; //update request object and pass to next
       next();
     }
@@ -49,17 +50,17 @@ app.post("/signup", function (req, res) {
   //check if user is already signed to
   if (users.find((user) => user.username === username)) {
     console.log(`Account with username ${username} already exists.`);
-    res.status(400).send(`Account with username ${username} already exists.`);
+    res.status(400).send(`Account with username [${username}] already exists.`);
+  } else {
+    //create entry into db
+    let user = {
+      username: username,
+      password: password,
+    };
+    users.push(user);
+    console.log(`User registered successfully!`);
+    res.status(200).send(`User registration successful!`);
   }
-
-  //create entry into db
-  user = {
-    username: username,
-    password: password,
-  };
-  users.push(user);
-  console.log(`User registered successfully!`);
-  res.status(200).send(`User registration successful!`);
 });
 
 app.post("/signin", function (req, res) {
@@ -91,7 +92,8 @@ app.get("/me", auth, function (req, res) {
   // const usernameFromToken = decodedInfoFromToken.username;
 
   //get the user from db
-  const usernameFromToken = req.user; //read the data from request object
+  // console.log(req);
+  const usernameFromToken = req.user.username; //read the data from request object
   const foundUser = users.find((user) => user.username === usernameFromToken);
 
   if (foundUser) {
@@ -102,7 +104,7 @@ app.get("/me", auth, function (req, res) {
     });
   } else {
     console.log(
-      `User with username: ${username} not found! This should not have happened with jwt implemented`,
+      `User with username: ${usernameFromToken} not found! This should not have happened with jwt implemented`,
     );
 
     res.status(500).send("Something went wrong");
