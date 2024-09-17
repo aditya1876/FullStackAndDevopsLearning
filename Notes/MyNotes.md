@@ -379,6 +379,43 @@ async function sendPostRequest() {
 </html>
 ```
 
+#### ZOD
+
+```javascript
+//npm install zod --> to install the lib
+
+const jwt = require("jsonwebtoken");
+const JWT_PASSWORD = "123456abcde";
+const zod = require("zod");
+
+//create zod schema
+const usernameSchema = zod.string().email(); //when username should be valid email
+const passwordSchema = zod.string().min(6); //when password should be atleast 6 chars long
+
+function signJwt(username, password) {
+  const usernameResponse = usernameSchema.safeParse(username);
+  const passwordResponse = passwordSchema.safeParse(password);
+
+  if (!usernameResponse.success || !passwordResponse.success) {
+    console.log("Username or password does not match required criteria");
+    return null;
+  }
+
+  console.log("Generating signature");
+  const signature = jwt.sign(
+    {
+      username,
+    },
+    JWT_PASSWORD,
+  );
+
+  return signature;
+}
+
+console.log(signJwt("invalidUsername", "invPa")); //returns null
+console.log(signJwt("proper@email.com", "validPass")); // returns signature token
+```
+
 ### Connecting Front-End and Back-End
 
 #### Different domains for FrontEnd and Backend
@@ -399,10 +436,6 @@ app
 
   - Navigate to project folder and run --> `node index.js`
   - The server will start running on the port specified in index.js --> `http://localhost:PORT`
-
-```
-
-```
 
 - Serving Frontend
   - Navigate to public folder and run --> `npx serve`
