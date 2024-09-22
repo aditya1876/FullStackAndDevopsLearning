@@ -153,6 +153,23 @@ setTimeoutPromisified(3000).then(functionToCallback);
   - This adds a folder `node_modules` in the project folder. node_modules contains the code and dependencies of the package itself.
 - Setup project - `npm install`
 
+### Working with env files
+
+- If node verion is > 20.6, you can use the following instead of installing dotenv module
+- Create `.env` file in the project folder.
+- Run the file - `node --env-file .env index.js`
+- For multiple envs, create separate .env_local or .env_prod and call that file when running the file
+
+```javascript
+//.env file contents
+API_KEY = "YOUR_API_KEY";
+JWT_SECRET = "YOUR JWT SECRET";
+
+//index.js contents to use the data from env file.
+const key = process.env.API_KEY;
+const secret = process.env.JWT_SECRET;
+```
+
 ### Some concepts in node.js/ javascript
 
 ```javascript
@@ -168,6 +185,38 @@ let z = JSON.stringify(y); //convert json to string
 typeof z; //string
 console.log(z.b); //undefined
 console.log(y.b); //other
+```
+
+### Try-Catch block
+
+```javascript
+app.post("/signup", async function (req, res) {
+  const email = req.body.email;
+  const password = req.body.password;
+  const username = req.body.username;
+
+  const hashedPassword = await bcrypt.hash(password, 5); //<------- Hashing the password (salt is also generated in it.)
+
+  try {
+    const isUserCreated = await UserCollection.create({
+      email: email,
+      password: hashedPassword,
+      username: username,
+    });
+    console.log(`Is User Created? :[${isUserCreated}]`);
+
+    res.status(200).json({
+      message: "Sign up successful",
+    });
+    console.log(`New user [${username}] registered successfully!`);
+  } catch (e) {
+    console.log("Error during user registration!");
+
+    res.status(403).json({
+      message: "User already exists",
+    });
+  }
+});
 ```
 
 ## HTTP / HTTPS SERVERS
@@ -416,6 +465,66 @@ console.log(signJwt("invalidUsername", "invPa")); //returns null
 console.log(signJwt("proper@email.com", "validPass")); // returns signature token
 ```
 
+```javascript
+//install - `npm install zod`
+
+const zod = require("zod"); //<---------import library
+
+app.post("/login", async function (req, res) {
+  //<------------Create zod object
+  const requriedBody = zod.object({
+    email: zod.string().min(3).max(20).email(),
+    password: zod.string().min(3).max(10),
+  });
+
+  //const parsedData = requiredBody.parse(req.body);
+  const safeParsedData = requiredBody.safeParse(req.body);
+
+  //<--------- check if data is in correct format
+  if (!safeParsedData.success) {
+    console.log(`Data provided is not in expected format`);
+    res.status(403).json({
+      message: "Invalid data format",
+      error: safeParsedData.error,
+    });
+  }
+
+  //<------ contiue if validation passed
+  const email = req.body.email;
+  const password = req.body.password;
+
+  //retrive the user based on the email match only(email is also unique but the password entered by user will not match DB password)
+  const user = await UserCollection.findOne({
+    email: email,
+  });
+  console.log(`User data found to db : [${user}]`);
+
+  const comparePassword = await bcrypt.compare(password, user.password);
+  console.log(`Compare Passwrord Result: [${comparePassword}]`);
+
+  //validate based on comparePassword
+  if (comparePassword) {
+    const token = jwt.sign(
+      {
+        id: user._id.toString(),
+      },
+      JWT_SECRET,
+    );
+
+    res.status(200).json({
+      token: token,
+    });
+
+    console.log(`User with email [${email}] successfully logged in!`);
+  } else {
+    console.log(`Signin failed for user with email [${email}]!`);
+    res.status(403).json({
+      message: "Incorrect Credentials",
+    });
+  }
+});
+```
+
 ### Connecting Front-End and Back-End
 
 #### Different domains for FrontEnd and Backend
@@ -626,3 +735,323 @@ app.listen(PORT, () => {
 - jwts need to be stored in the browser explicitly. Cookies are stored automatically.
 - Cookies are set by the application by using the header `Set-Cookie` and the browser automatically sends the cookie in the `cookie` header in all subsequent requests.
 - Cookies only work in webapp/ browser. Wont work in Mobile.
+
+## DATABASE BASICS
+
+### MongoDB Setup
+
+- create account in mongodb site.
+- Create an org.
+- Select a Project(or create one)
+- Click 'Build a Database'
+- Select M0 (free).
+- Select provider (anyone)
+- Select region (anyone, select one that is closer to you)
+- Give it a name
+- Click 'Create'
+- Create credentials for the new DB (choose username/ password)
+- Add entries to your IP access List
+  - IP Address = 0.0.0.0/0
+  - Description = everywhere
+- Finish and close
+- You should see your database
+- Click on connect in the database.
+- Select 'Mongodb for VS Code'
+  - install extension 'Mongodb for VS code'
+  - open command palatte and select mongodb - connect with connection string
+  - Copy the connection string from mongodb site, replace with your username and password (created earlier) and paste in VS code.
+  - _Keep the Connection string safe(dont upload to github)_
+  - Click on Create new playground.
+
+### Basics
+
+- Structure:
+  - Select cluster > create DB > create collections(tables) inside this db > each collection can have documents(rows) that contain data.
+- Each document(row) contains a unique id called 'object id' provided by Mongodb(unique key for mongodb).
+- Advantages of NoSQl:
+  - Schema flexibility (very hard to change in SQL DBs)
+  - Scalability. NoSQl can scale horizontally. Multiple instances can be setup as required in an easier way than SQL DBs.
+
+### Example project
+
+```javascript
+//DB.js FILE
+/**
+ * STEPS:
+ * - import mongoose module
+ * - import Schema object from mongoose
+ * - MongoDb has its own unique key to identify individual records called ObjectId. we need to import that.
+ * - Create schemas for each collections tobe used
+ * - Connect the schma and the collection it should belong to.
+ * - Export the models so that they can be imported in index.js
+ * - Import the models in index.js using `const {UserCollection, TodoCollection} = require("./db");`
+ * - In `index.js` file:
+ *   - Add connection with mongodb database
+ *    - `mongoose.connect("mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER_STRING>/<DB NAME>");
+ *   - convert the functions interacting with DB into async-await format
+ *
+ */
+
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+const ObjectId = Schema.ObjectId;
+
+//create schema for all collections
+const UserSchema = new Schema({
+  email: { type: String, unique: true }, //email will be unique
+  password: String,
+  username: String,
+});
+
+const TodoSchema = new Schema({
+  title: String,
+  isCompleted: Boolean,
+  userId: ObjectId,
+});
+
+//Connect the schema and the collection(table) it should belong to
+const UserCollection = mongoose.model("users_table", UserSchema);
+const TodoCollection = mongoose.model("todos_table", TodoSchema);
+
+//Export the models so that they can be imported in index.js
+module.exports = {
+  UserCollection: UserCollection,
+  TodoCollection: TodoCollection,
+};
+```
+
+```javascript
+//INDEX.js FILE
+const express = require("express");
+
+//SETUP JSONWEBTOKEN INFORMATION
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_KEY;
+
+//IMPORT DATABASE MODELS AND CONNECT TO DB
+const { UserCollection, TodoCollection } = require("./db"); //<----------Importing models from db.js file
+const mongoose = require("mongoose");
+mongoose.connect(process.env.MONGO_DB_CONNECTION_STRING); //<------------Connecting to the database
+
+const app = express();
+app.use(express.json());
+
+//Middlewares
+function auth(req, res, next) {
+  const token = req.headers.authorization;
+  const decodedData = jwt.verify(token, JWT_SECRET);
+
+  if (decodedData) {
+    req.userId = decodedData.id; //add the userid into req object to be used later
+    console.log(`user with userid: [${decodedData.id}] is authenticated.`);
+    next();
+  } else {
+    console.log(`User with token: [${token}] is not authenticated`);
+
+    res.status(403).json({
+      message: "User is not authenticated.",
+    });
+  }
+}
+
+//ROUTES
+app.post("/signup", async function (req, res) {
+  const email = req.body.email;
+  const password = req.body.password;
+  const username = req.body.username;
+
+  //<---------------INSERT 1 DATA INTO DB
+  const isUserCreated = await UserCollection.create({
+    email: email,
+    password: password,
+    username: username,
+  });
+
+  console.log(`Is User Created? :[${isUserCreated}]`);
+
+  res.status(200).json({
+    message: "Sign up successful",
+  });
+
+  console.log(`New user [${username}] registered successfully!`);
+});
+
+app.post("/login", async function (req, res) {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  //validate that the email/ password combination is valid
+  //<------------- GET 1 ITEM FORM DB
+  const user = await UserCollection.findOne({
+    email: email,
+    password: password,
+  });
+
+  console.log(`User data found to db : [${user}]`);
+
+  if (user) {
+    const token = jwt.sign(
+      {
+        id: user._id.toString(), //<---------- this is mongodb unique key for each user
+      },
+      JWT_SECRET,
+    );
+
+    res.status(200).json({
+      token: token,
+    });
+
+    console.log(`User with email [${email}] successfully logged in!`);
+  } else {
+    console.log(`Signin failed for user with email [${email}]!`);
+    res.status(403).json({
+      message: "Incorrect Credentials",
+    });
+  }
+});
+
+app.post("/todo", auth, async function (req, res) {
+  const title = req.body.title;
+  const isCompleted = req.body.isCompleted;
+
+  //add new todo item for user in DB
+  //<------------------ adding new entry to database.
+  const isTodoAdded = await TodoCollection.create({
+    title: title,
+    isCompleted: isCompleted,
+    userId: req.userId, //read data from udpated request
+  });
+
+  console.log(`Todo item added: [${isTodoAdded}]`);
+
+  res.status(200).json({
+    message: "Todo item added!",
+  });
+});
+
+app.get("/todos", auth, async function (req, res) {
+  //get all the todos for the specified user from todos collection
+  //<------------------- Get all data for particular user
+  const allTodos = await TodoCollection.find({
+    userId: req.userId,
+  });
+
+  console.log(`All Todos are displayed: [${allTodos}]`);
+
+  res.status(200).json({
+    allTodos: allTodos,
+  });
+});
+
+//LISTEN
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server started at port ${PORT}`);
+});
+```
+
+## PASSWORD ENCRYPTION
+
+### Hashing
+
+- Storing user passwords in database as plaintext is NOT a good practice.
+- Hashing can be used.
+- Hashing is a 1-way algorithm that converts a String into another random string.
+- eg - Ram -> lksdjfi938027
+- It is deterministic, i.e, everytime hashing is applied to 'Ram' it will lead to 'lksdjfi938027'
+- Process:
+  - User signsup with password 'Ram'.
+  - Backend applied hashing and converts Ram into a hash 'asdf1234'
+  - This hashed password is stored in DB.
+  - Next time user logs in with password 'Ram', the backend again applies hashing algorithm and converts it to 'asdf1234' and compares with DB, thereby authenticating the user successfully.
+- But Hashing has a problem.
+  - if 2 users have same password, their hashed password will also be same.
+  - So if 1 users password is desiphered(eg- by social engineering the user), all the users who have the same password are also at risk
+  - To avoid this, 'Salting' is used.
+
+#### Salting
+
+- Process:
+  - User signs up with password 'Ram'.
+  - Backend adds a random string at the end of password 'poiu12' and make it 'Rampoiu12'.
+  - This new string is then hashed to generate 'asdf1234' as hashed password.
+  - DB now stores both the hashed password 'asdf1234' and salting string 'poiu12' for the user.
+  - Next time user logs in with password 'Ram', backend retrieves both the hashed password and the salting string.
+  - Backed appends the salting string to the password and applies the hashing algorithm, then compares the output to what is retrieved from DB.
+- This way even though 2 users may have the same password, their hash saved in the DB will be different.
+- This approach also helps guard against rainbow tables (Pre-created table that contains a list of common passwords and their hashed counterpart. When DB gets leaked, hackers can just compare the hashes and derive the actual password used)
+
+```javascript
+//NOTES:
+//* 'bcrypt' is an npm module that provides hashing with salting inbuilt
+//* install - `npm install bcrypt`
+//* bcrypt.hash(password, 5) takes user provided password and a number to generate hashed pass and slat. The number represents the number of times the hash should be applied. The higher the number the longer it takes to generate the hashed password.
+//* The generated hash contains both the salt and the hashed password.
+//* eg - output will be of format like $2b$05$sdlkfeowijw98792ldfkgldfklrildklkdligrjdligjdrlij
+//  - $02b represents the algorithm used
+//  - $05 represents the number used in the hash() function
+//  - $xxxxx contains both the salt and the actual hashed password (first 16 or some digits are salt string and the rest are hashed password)
+//bcrypt.compare() automatically retrieves the algorithm, number and salt values form the db string and applies hash() on the provided password again for comparision
+
+//PASSWORD ENCRYPTION
+const bcrypt = require("bcrypt"); //<---------Import the module
+
+//ROUTES
+app.post("/signup", async function (req, res) {
+  const email = req.body.email;
+  const password = req.body.password;
+  const username = req.body.username;
+
+  const hashedPassword = await bcrypt.hash(password, 5); //<------- Hashing the password (salt is also generated in it.)
+
+  const isUserCreated = await UserCollection.create({
+    email: email,
+    password: hashedPassword, //<------ hashedpassword contains both the password and the salt string
+    username: username,
+  });
+
+  console.log(`Is User Created? :[${isUserCreated}]`);
+
+  res.status(200).json({
+    message: "Sign up successful",
+  });
+
+  console.log(`New user [${username}] registered successfully!`);
+});
+
+app.post("/login", async function (req, res) {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  //retrive the user based on the email match only(email is also unique but the password entered by user will not match DB password)
+  const user = await UserCollection.findOne({
+    email: email,
+  });
+  console.log(`User data found to db : [${user}]`);
+
+  const comparePassword = await bcrypt.compare(password, user.password); //<---auto compares the user entered password and hashed DB password
+  console.log(`Compare Passwrord Result: [${comparePassword}]`);
+
+  //validate based on comparePassword
+  //<---- respond based on compared password
+  if (comparePassword) {
+    const token = jwt.sign(
+      {
+        id: user._id.toString(),
+      },
+      JWT_SECRET,
+    );
+
+    res.status(200).json({
+      token: token,
+    });
+
+    console.log(`User with email [${email}] successfully logged in!`);
+  } else {
+    console.log(`Signin failed for user with email [${email}]!`);
+    res.status(403).json({
+      message: "Incorrect Credentials",
+    });
+  }
+});
+```
