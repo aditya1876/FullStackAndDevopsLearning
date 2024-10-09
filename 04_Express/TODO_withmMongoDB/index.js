@@ -48,7 +48,7 @@ const zod = require("zod"); //<---------import library
 
 app.post("/login", async function (req, res) {
   //<------------Create zod object
-  const requriedBody = zod.object({
+  const requiredBody = zod.object({
     email: zod.string().min(3).max(20).email(),
     password: zod.string().min(3).max(10),
   });

@@ -153,6 +153,22 @@ setTimeoutPromisified(3000).then(functionToCallback);
   - This adds a folder `node_modules` in the project folder. node_modules contains the code and dependencies of the package itself.
 - Setup project - `npm install`
 
+### Update scripts in `package.json`
+
+- update scripts like below in package.json file
+
+```json
+ "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start" : "node --env-file .env index.js",
+    "dev":"nodemon --env-file .env index.js"
+  },
+```
+
+- install nodemon - `npm install nodemon`
+- run in dev mode (nodemon monitors file changes and automatically restarts server if there are changes) - `npm run dev`
+- run in production mode(not using nodemon here) - `npm run start`
+
 ### Working with env files
 
 - If node verion is > 20.6, you can use the following instead of installing dotenv module
@@ -361,6 +377,68 @@ function catchAllUncaughtExceptions(err, req, res, next) {
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port: ${PORT}`);
+});
+```
+
+### Express Router
+
+- Clean up the index.js file.
+- Make the code more modular
+- Makes it easy to update the api routes later on. eg - you can have '/api/v1/user' as the top level route in index.js. If you want to change all you have to do is update the index.js file ot '/api/v2/user'.
+- If another team is building new APIs for the same product, you can continue to use the old one in production. eg- we can create new top level routes while the existing routes are running in parallel
+
+```text
+Folder structure
+<project root>
+  - routes/
+    - users.js
+    - courses.js
+    - admin.js
+- index.js
+```
+
+```javascript
+//index.js
+const express = require("express");
+
+//routers
+const { userRouter } = require("./routes/user");
+const { courseRouter } = require("./routes/course");
+const { adminRouter } = require("./routes/admin");
+
+const app = express();
+
+//Define Routes
+app.use("/user", userRouter);
+app.use("/course", courseRouter);
+app.use("/admin", adminRouter);
+```
+
+```javascript
+//File = <projectRoot>/routes/users.js
+
+const { Router } = require("express");
+const userRouter = Router();
+
+//following route can be accessed using http://localhost:port/user/signup
+userRouter.post("/signup", function (req, res) {
+  res.status(200).json({
+    message: "/user/signup route",
+  });
+});
+
+//following route can be accessed using http://localhost:port/user/signin
+userRouter.post("/signin", function (req, res) {
+  res.status(200).json({
+    message: "/user/signin route",
+  });
+});
+
+//following route can be accessed using http://localhost:port/user/purchases
+userRouter.get("/purchases", function (req, res) {
+  res.status(200).json({
+    message: "/user/purchases route",
+  });
 });
 ```
 
@@ -831,7 +909,18 @@ const JWT_SECRET = process.env.JWT_KEY;
 //IMPORT DATABASE MODELS AND CONNECT TO DB
 const { UserCollection, TodoCollection } = require("./db"); //<----------Importing models from db.js file
 const mongoose = require("mongoose");
-mongoose.connect(process.env.MONGO_DB_CONNECTION_STRING); //<------------Connecting to the database
+//<----------------------Connecting to database (basic way - dont use)
+//mongoose.connect(process.env.MONGO_DB_CONNECTION_STRING);
+
+//<----------------------Connecting to the database - ok ok way
+//(async () => {
+//  try {
+//    await mongoose.connect(process.env.MONGODB_CONNECTION_STRING);
+//    console.log(`Successfully connected to DB.`);
+//  } catch (err) {
+//    console.log(`Error in db connection. Error: [${err.stack}]`);
+//  }
+//})();
 
 const app = express();
 app.use(express.json());
@@ -943,11 +1032,20 @@ app.get("/todos", auth, async function (req, res) {
   });
 });
 
-//LISTEN
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server started at port ${PORT}`);
-});
+//<---------------------------Connecting to database - better way (ensures app starts listening only when db is connected)
+//Do mandatory steps that should complete before starting the app here
+async function main() {
+  //CONNECT TO DATABASE
+  await mongoose.connect(process.env.MONGODB_CONNECTION_STRING);
+  console.log(`Successfully connected to DB.`);
+
+  //LISTEN
+  app.listen(process.env.PORT, () => {
+    console.log(`Server started on port: [${PORT}]`);
+  });
+}
+
+main();
 ```
 
 ## PASSWORD ENCRYPTION
@@ -956,7 +1054,7 @@ app.listen(PORT, () => {
 
 - Storing user passwords in database as plaintext is NOT a good practice.
 - Hashing can be used.
-- Hashing is a 1-way algorithm that converts a String into another random string.
+  u- Hashing is a 1-way algorithm that converts a String into another random string.
 - eg - Ram -> lksdjfi938027
 - It is deterministic, i.e, everytime hashing is applied to 'Ram' it will lead to 'lksdjfi938027'
 - Process:
