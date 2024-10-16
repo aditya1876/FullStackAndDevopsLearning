@@ -1153,3 +1153,412 @@ app.post("/login", async function (req, res) {
   }
 });
 ```
+
+## REACT
+
+- Introduced by facebook when they became too big for managing frontend
+- React is an easier way to write normal HTML/CSS/JS. It is a new syntax that gets converted to HTML/ CSS and JS under the hood.
+- React code -> `npm run build` -> converts the code to HTML/CSS/JS that gets deployed into the server
+
+```html
+<html>
+  <script>
+    function onButtonPress() {
+      const currVal = document.getElementById("button1").innerHTML;
+      const countVal = currVal.split(" ")[1];
+      const newCountVal = parseInt(countVal) + 1;
+
+      document.getElementById("button 1").innerHTML = "Counter " + newCountVal;
+    }
+  </script>
+
+  <body>
+    <button onclick="onButtonPress()" id="button1">Counter 0</button>
+  </body>
+</html>
+```
+
+- 3 parts - state, component, re-rendering
+- State:
+  - object that represents the current state of the app.
+  - represents the dynamic things in the app (value of the counter above)
+- Component:
+  - re-usable, dynamic snippet that changes given the state
+  - determines how a dom element should look like given the state
+- Re-render
+  - A state change triggers a re-render.
+  - A re-render represents the dom change when dom is being manipulated.
+- Basically in a react app:
+  - Create components
+  - Create state variables
+  - Associate state to the components
+  - React will take care of updating(re-rendering) the UI/dom when state changes
+
+```html
+<!-- same example as above but including the react logic. we are writing ourlogic as well as react logic together-->
+<!doctype html>
+<html>
+  <body>
+    <div id="buttonparent"></div>
+
+    <script>
+      let state = {
+        count: 0,
+      };
+
+      function onButtonPress() {
+        state.count++;
+        buttonComponentReRender();
+      }
+
+      function buttonComponentReRender() {
+        document.getElementById("buttonparent").innerHTML = ""; //remove current elements
+        const component = buttonComponent(state.count); //select the component to rerender
+        document.getElementById("buttonparent").appendChild(component); //render the button on the UI
+      }
+
+      function buttonComponent(count) {
+        const button = document.createElement("button"); //create button element
+        button.innerHTML = `Counter: ${count}`;
+        button.setAttribute("onclick", "onButtonPress()"); //add attributes to it
+      }
+
+      buttonComponentReRender(); //call it once so that it renders the button first time the page loads
+    </script>
+  </body>
+</html>
+```
+
+- jsx is a javascript XML. it is a syntax extension to javascript. Can be used to write HTML like code directly in javascript.
+
+```jsx
+<!-- same example in react -->
+<!-- FILE NAME - App.jsx -->
+import {useState} from 'react';
+
+export default App(){
+  const [count, setCount] = useState(0); //initialize state variable 'count' with val=0. 'setCount' is the function to update count
+  //'count' should be updated using 'setState' function only otherwise, react will not trigger re-render.
+
+  function onButtonPress(){
+    setState(count+1);
+  }
+
+  //notice the syntax changes below. It is not html, it is xml
+  return(
+  <div>
+      <button id="btn" onClick={onButtonPress}>Counter {count}</button>
+  </div>
+  )
+}
+```
+
+```jsx
+<!-- same example. This time in react -->
+<!-- FILE NAME - App.jsx-->
+import React from 'react'
+
+function App(){
+  const [count, setCount ] = React.useState(0); //initializing state. 'state' is the variable(value set to 0 here), 'setState' is the function to control it
+
+  //Note - it is 'Button' and not 'button'
+  return (
+    <div>
+      <Button count={count} setCount={setCount}></Button>
+    </div>
+  )
+}
+
+//
+function Button(props){
+  function onButtonPress(){
+    props.setCount(props.count + 1); //state management logic goes here.
+  }
+
+  return <button onClick={onButtonPress}>Counter {props.count}</button>
+}
+
+export default App
+
+```
+
+- Some terms to read about - diffing, VDOM, Bulk updates, Reconcilliation, context api, prop drilling
+
+### Creating REACT app locally
+
+- Using Vite(most popular)
+  - navigate to folder 1 level above the project folder
+  - run `npm create vite@latest`
+  - follow the prompts and create project
+    - enter project name
+    - package name can be same
+    - framework - react
+    - language - javascript
+  - `cd <projectName>`
+  - `npm install`
+  - `npm run dev`
+  - app will start locally and will provide url to access.
+  - Killing running app:
+    - `ctrl+c` if you have access to terminal where the process is running
+    - if you do not have access to the terminal where the app was started:
+      - `px -ax | grep vite`
+      - `kill -9 <pid>` get the pid from above command
+
+### Control flow in React App
+
+- Folder structure
+
+```Text
+- ProjectRoot
+  - public/
+  - src/
+    - index.css
+    - App.css
+    - main.jsx
+    - App.jsx
+  - index.js
+  - eslint.config.js
+  - package.json
+  - package-lock.json
+  - vite.config.js
+  - Readme.md
+```
+
+- Start in `index.html`. it provides the basic structure to the webapp. The script being called in `script` is /src/main.jsx
+- main.jsx -> This file points to the html tag that will be controlled by React in App. (document.getElementById("root"))
+- App.jsx -> All the code to be handled by React goes here. Most of the code goes here.
+- There can be multiple html tags that are controlled by React in the main.jsx. You need to have the tags present in index.html, have entry in the main.jsx and have currosponding jsx file imported.
+
+### React Lifecycle events
+
+#### Mounting
+
+- The following code will not run properly in the long run. The app tries to run a timer that increases the count every second. The reason the app does not run properly in the long run is the following:
+
+  - The counter function called everytime the setCount function is called. This means setInterval is re-called every time the state changes(setCount is called). Each setInterval then tries to update the state every second causing a recursive loop.
+
+- The solution to this problem is to utilize lifecycle events of React.
+- Mounting happens when Counter function is called for the first time.
+- Mounting is done using `useEffect()` hook
+- useEffect is used to avoid `side effects`. side effects are operations that interact with the outside world and have effects other than rendering(eg: starting a clock, fetching data from API)
+
+```jsx
+import { useState } from "react";
+
+export default function App() {
+  function Counter() {
+    const [count, setCount] = useState(0);
+
+    setInterval(function () {
+      setCount(count + 1);
+    }, 1000);
+
+    return (
+      <>
+        <div>
+          <h1>{count}</h1>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div>My App</div>
+      <Counter></Counter>
+    </>
+  );
+}
+```
+
+- Code using `useEffect()` hook
+
+```jsx
+import { useState, useEffect } from "react";
+
+export default function App() {
+  function Counter() {
+    console.log("this function run on every re-render");
+
+    const [count, setCount] = useState(0);
+
+    //useEffect takes 2 args, a function and dependencies
+    useEffect(function () {
+      const clock = setInterval(function () {
+        setCount((count) => count + 1);
+        //below line will not work without passing dependency
+        //setCount(count+1);
+      }, 1000);
+      console.log("This hood runs only once. On mounting/ first render");
+
+      return function () {
+        console.log("This returns only when un-mounting");
+        clearInterval(clock); //builtin function to stop running setInterval
+      };
+    }, []);
+
+    return (
+      <>
+        <div>
+          <h1>{count}</h1>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div>My App</div>
+      <Counter></Counter>
+    </>
+  );
+}
+```
+
+- Dependency Array:
+  - it tells useEffect when to run.
+  - if empty, useEffect runs only once.
+  - on providing a state variable, useEffect will run whenever the state variable changes
+  - the return statement inside useEffect is used to clean up the code. It will run when react knows the useEffect needs to be cleared/ when the component effected by useEffect is no longer needed to be rendered.
+
+```jsx
+import { useState, useEffect } from "react";
+
+export default function App() {
+  const [count, setCount] = useState(0);
+  const [count2, setCount2] = useState(100);
+
+  function increaseCount1() {
+    setCount((c) => c + 1);
+  }
+
+  function decreaseCount2() {
+    setCount2((c) => c - 1);
+  }
+
+  return (
+    <>
+      <h1>My Sample React App</h1>
+      <Counter count={count} count2={count2}></Counter>
+      <button onClick={increaseCount1}>Increase Count 1</button>
+      <button onClick={decreaseCount2}>Decrease Count 2</button>
+    </>
+  );
+}
+
+function Counter(props) {
+  useEffect(function () {
+    console.log("runs when mounting");
+
+    return function () {
+      console.log("runs when unmounting");
+    };
+  }, []);
+
+  useEffect(
+    function () {
+      console.log("when mounting - count");
+
+      return function () {
+        console.log("when unmounting - count");
+      };
+    },
+    [props.count],
+  );
+
+  useEffect(
+    function () {
+      console.log("when mounting - count2");
+
+      return function () {
+        console.log("when unmounting - count2");
+      };
+    },
+    [props.count2],
+  );
+
+  return (
+    <>
+      <div>Counter 1: {props.count}</div>
+      <div>Counter 2: {props.count2}</div>
+    </>
+  );
+}
+```
+
+- The above code will give following output:
+
+  - when app is initialized
+
+    ```text
+    runs when mounting
+    when mounting - count
+    when mounting - count2
+    ```
+
+  - when 'increase count 1' button is clicked
+
+    ```text
+    when unmounting - count
+    when mounting - count
+    //here clean up will run first and then the next round.
+    //the clean up will be called everytime the button is press and useEffect is called.
+    ```
+
+  - when 'decrease count 2' button is clicked
+
+  ```text
+  when unmounting - count2
+  when mounting - count2
+  ```
+
+#### Re-rendering
+
+- normal behaviour.
+- Counter function will keep rerendering if setCount is called.
+
+##### Conditional re-rendering
+
+- re-render based on a condition
+
+```jsx
+import { useState, useEffect } from "react";
+
+export default function App() {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(function () {
+    setInterval(function () {
+      setIsVisible((c) => !c);
+    }, 5000);
+  }, []);
+
+  function Counter() {
+    const [count, setCount] = useState(0);
+
+    useEffect(function () {
+      const clock = setInterval(function () {
+        setCount((count) => count + 1);
+      }, 1000);
+
+      return fucntion(){
+        console.log("on unmount");
+        clearInterval(clock);
+      }
+    }, []);
+
+    return (
+      <div>
+        <h1>{count}</h1>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div>My App </div>
+      {isVisible ? <Counter></Counter> : null}
+    </>
+  );
+}
+```
