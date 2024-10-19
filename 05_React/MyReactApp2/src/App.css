@@ -66,3 +66,24 @@
   grid-column:6/8;
   grid-row:4/6;
 }
+
+.item8{
+  background: darkblue;
+  padding: 1em;
+  grid-column: 1/8;
+  grid-row:6/9;
+}
+
+.item9{
+  background: darkblue;
+  padding: 1em;
+  grid-column: 1/2;
+  grid-row: 9/10;
+}
+
+.item10{
+  background: darkblue;
+  padding: 1em;
+  grid-column:2/3;
+  grid-row:9/10;
+}

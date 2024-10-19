@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./App.css";
 
 export default function App() {
@@ -29,6 +29,26 @@ export default function App() {
         <div className="item7">
           <h2>Notification Counter</h2>
           <NotificationCounter></NotificationCounter>
+        </div>
+        <div className="item8">
+          <h2>Buttons as tabs</h2>
+          <ButtonTabs></ButtonTabs>
+        </div>
+        <div className="item9">
+          <h2>Children prop</h2>
+          <Child
+            children={<div>I am also a child and will be displayed</div>}
+          ></Child>
+          <Child>
+            <div style={{ color: "red" }}>
+              <div>Post your thoughts</div>
+              <input type="text" />
+            </div>
+          </Child>
+        </div>
+        <div className="item10">
+          <h2>useRef - Reference by value</h2>
+          <RefTimer></RefTimer>
         </div>
       </div>
     </>
@@ -74,6 +94,7 @@ function IncrementDecrement() {
 }
 
 function Timer() {
+  //works when 'strict mode is turned off'
   // const [countTimer, setCountTimer] = useState(0);
   //
   // function increaseCount() {
@@ -92,10 +113,9 @@ function Timer() {
   //     </div>
   //   </>
   // );
-
   return (
     <>
-      <div>Does not work as expected</div>
+      <div>Uncomment code and remove StrictMode to make it work</div>
     </>
   );
 }
@@ -116,9 +136,44 @@ function ToggleText() {
 }
 
 function DisplayFor5Secs() {
+  // const [counter5sec, setCounter5Secs] = useState(0);
+  // const [isTimerVisible, setIsTimerVisible] = useState(true);
+  //
+  // function toggle5Secs() {
+  //   setIsTimerVisible((isTimerVisible) => !isTimerVisible);
+  // }
+  //
+  // function countTracker() {
+  //   setCounter5Secs((counter5sec) => counter5sec + 1);
+  // }
+  //
+  // useEffect(
+  //   function () {
+  //     const myclock = setInterval(function(){
+  //     setCounter5Secs(counter5secs => counter5Secs + 1);
+  //     }, 1000);
+  //
+  //     return function(){
+  //      clearInterval(myclock);
+  //     }
+  //   }
+  //   [counter5sec],
+  // );
+  //
+  // useEffect(function () {
+  //   setInterval(toggle5Secs, 5000);
+  // }, []);
+  //
+  // return (
+  //   <>
+  //     <div>Display timer every 5 seconds:</div>
+  //     {isTimerVisible ? <div>{counter5sec}</div> : null}
+  //   </>
+  // );
+
   return (
     <>
-      <div>Display timer every 5 seconds - not implemented</div>
+      <div>Not working as expected</div>
     </>
   );
 }
@@ -188,6 +243,120 @@ function NotificationCounter() {
 
         <button onClick={notification_counter}>Notify</button>
       </div>
+    </>
+  );
+}
+
+function ButtonTabs() {
+  const [currentTab, setCurrentTab] = useState("Feed");
+  const [tabData, setTabData] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  let linkToFetch = "";
+
+  useEffect(
+    function () {
+      setIsLoading((isLoading) => (isLoading = true)); //page will be loading till fetch gets a response, we should show loader till then
+      console.log("Fetching data for Tab: " + currentTab);
+      if (currentTab === "Feed") {
+        linkToFetch = "https://jsonplaceholder.typicode.com/posts/1";
+      } else if (currentTab === "Notifications") {
+        linkToFetch = "https://jsonplaceholder.typicode.com/posts/2";
+      } else if (currentTab === "Messages") {
+        linkToFetch = "https://jsonplaceholder.typicode.com/posts/3";
+      } else if (currentTab === "Jobs") {
+        linkToFetch = "https://jsonplaceholder.typicode.com/posts/4";
+      }
+
+      fetch(linkToFetch).then(async (res) => {
+        const jsonData = await res.json();
+        setTabData(jsonData);
+        setIsLoading((isLoading) => (isLoading = false));
+      });
+    },
+    [currentTab],
+  );
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          setCurrentTab("Feed");
+        }}
+        style={{ color: currentTab == "Feed" ? "red" : "black" }}
+      >
+        Feed
+      </button>
+      <button
+        onClick={() => {
+          setCurrentTab("Notifications");
+        }}
+        style={{ color: currentTab == "Notifications" ? "red" : "black" }}
+      >
+        Notifications
+      </button>
+      <button
+        onClick={() => {
+          setCurrentTab("Messages");
+        }}
+        style={{ color: currentTab == "Messages" ? "red" : "black" }}
+      >
+        Messages
+      </button>
+      <button
+        onClick={() => {
+          setCurrentTab("Jobs");
+        }}
+        style={{ color: currentTab == "Jobs" ? "red" : "black" }}
+      >
+        Jobs
+      </button>
+      <div>{isLoading ? "Loading..." : tabData.title}</div>
+    </>
+  );
+}
+
+function Child({ children }) {
+  return (
+    <>
+      <div
+        style={{
+          background: "lightblue",
+          borderRadius: 10,
+          color: "balck",
+          padding: 10,
+          margin: 10,
+        }}
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+
+function RefTimer() {
+  const [clock, setClock] = useState(0);
+  //let timerval = 0; //will not work - timerval will be reset on every re-render of RefTimer.
+  //const [timerval,setTimerval] =useState(0); //will not work - 1 exra re-render will happen when setTimerval is called. It will make timer incorrect
+  const timerval = useRef();
+
+  function startClock() {
+    let value = setInterval(function () {
+      setClock((c) => c + 1);
+    }, 1000);
+    //timerval = value;
+    //setTimerval(value);
+    timerval.current = value;
+  }
+
+  function pauseClock() {
+    clearInterval(timerval.current);
+  }
+
+  return (
+    <>
+      <div>{clock}</div>
+      <button onClick={startClock}>Start</button>
+      <button onClick={pauseClock}>Pause</button>
     </>
   );
 }

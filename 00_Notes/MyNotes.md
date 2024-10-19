@@ -1329,6 +1329,226 @@ export default App
 - App.jsx -> All the code to be handled by React goes here. Most of the code goes here.
 - There can be multiple html tags that are controlled by React in the main.jsx. You need to have the tags present in index.html, have entry in the main.jsx and have currosponding jsx file imported.
 
+### Children prop
+
+- Can be used to create a template for the HTML elements
+- What ever is within the tag will automatically become the child(see 2nd 'Child' element in example below)
+- It is like a wrapper component
+- Can use multiple elements of the same component for having different children
+
+```jsx
+export default function App() {
+  return (
+    <>
+      <div className="item9">
+        <h2>Children prop</h2>
+        <Child
+          children={<div>I am also a child and will be displayed</div>}
+        ></Child>
+        <Child>
+          <div style={{ color: "red" }}>
+            <div>Post your thoughts</div>
+            <input type="text" />
+          </div>
+        </Child>
+      </div>
+    </>
+  );
+}
+
+function Child({ children }) {
+  return (
+    <>
+      <div
+        style={{
+          background: "lightblue",
+          borderRadius: 10,
+          color: "balck",
+          padding: 10,
+          margin: 10,
+        }}
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+```
+
+### Adding keys to lists
+
+- when using dynamically generated lists, provide keys or react will show warning message
+- React uses keys to optimize the re-rendering.
+
+```jsx
+function MyTodos() {
+  let mytodos = [
+    {
+      title: "gym",
+      done: false,
+      id: 1,
+    },
+    {
+      id: 2,
+      title: "eat",
+      done: true,
+    },
+  ];
+  const [todos, setTodos] = setState(mytodos);
+
+  const showall = todos.map(todo => <div key={todo.id}>{todo.title} -- {todo.done}<div>);
+
+  return (
+  <div>{showAll}</div>
+  )
+
+}
+```
+
+### Inline styling
+
+- Some syntax differences between normal HTML styling and react styling
+- double `{{}}` are required in react
+
+```jsx
+<Child>
+  <div style={{ color: "red" }}>
+    <div>Post your thoughts</div>
+  </div>
+</Child>
+
+const componentStyle = {colour: "blue"}
+<MyComponent>
+  <div style={componentStyle}>
+    My colour is blue
+  </div>
+</MyComponent>
+
+function MyComponent(){
+    return (
+      <div style={componentStyle}>
+        Test
+      </div>
+      </div style={{color:"black"}}>
+        double brackets again
+      </div>
+    )
+}
+
+```
+
+### Error Boundary
+
+- Without this, if there is an error in 1 component, the entire page does not display/ app crashes.
+- Error boundary allows the error to stay in the component and other components display normally.
+- But the error boundary has to be implemented in old way in React using `class based Components`.
+- Most companies have the following code as black box and just use it till error boundary is introduced in new React way `function based Components`
+
+```jsx
+export default function App(){
+  return (<>
+    <ErrorBoundary>
+      <Card1 />
+    </ErrorBoundary>
+    <Card 2/>
+  </>)
+}
+
+function Card1(){
+
+  //throw new Error("Error while rendering");
+
+  return (
+  <div style={{background: "blue", borderRadius: 20, padding: 20, margin: 20}}>
+    data in card 1
+  </div>
+  );
+}
+
+function Card2(){
+  return (
+    <div style={{background: "blue", borderRadius: 20, padding: 20, margin: 20}}>
+      data in card 1
+    </div>
+  );
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(porps){
+    super(props);
+    this.state = {hasError: false}
+  }
+
+  static getDerivedStateFromError(error){
+    return {hasError : true}
+  }
+
+  componentDidCatch(error, info){
+    console.error("Error caught: ",error, info);
+  }
+
+  render(){
+    if(this.state.hasError){
+      return (
+        <div style={{background: "blue", borderRadius: 20, padding: 20, margin: 20}}>
+          Some error occured
+        </div>)
+    }
+    return this.props.children;
+  }
+}
+```
+
+### Fragments in react
+
+- helps to avoid unnecessary element tags
+- if you want your component to be right below the root element return with <></>
+
+```jsx
+
+function MyComponent(){
+  return (
+    <div>
+      <div>Element 1</div>
+      <div>Element 2</div>
+    </div>
+  )
+}
+
+gives final html-->
+<html>
+  <body>
+    <div id="root">
+      <div>
+        <div>Element 1</div>
+        <div>Element 2</div>
+      </div>
+    </div>
+  </body>
+</html>
+
+but using fragment
+function MyComponent(){
+  return (
+    <>
+      <div>Element 1</div>
+      <div>Element 2</div>
+    </>
+  )
+}
+
+gives final html-->
+<html>
+  <body>
+    <div id="root">
+      <div>Element 1</div>
+      <div>Element 2</div>
+    </div>
+  </body>
+</html>
+
+```
+
 ### React Lifecycle events
 
 #### Mounting
@@ -1562,3 +1782,393 @@ export default function App() {
   );
 }
 ```
+
+### Single Page Applications in React
+
+- Single Page Applications (SPAs) are web applications that load a single HTML page and dynamically update that page as the user interacts with the app. This approach allows for a smoother user experience compared to traditional multi-page applications (MPAs), where each interaction often requires a full page reload.
+- Setup:
+
+  - Follow previous steps to create a React app.
+  - Install package - `npm install react-router-dom`
+
+- Below is the basic webapp. The navigation to different routes requires a network call to fetch the entire HTML again and again. This leads to the display of a loader in the title section of the browser.
+
+```jsx
+import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+function App() {
+  //cloning - https://allen.in
+  return (
+    <>
+      <div>
+        <a href="/">Allen</a>
+        <a href="/neet/online-class-11">NEET Class11</a>
+        <a href="/neet/online-class-12">NEET Class12</a>
+      </div>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route
+            path="/neet/online-coaching-class-11"
+            element={<Class11Program />}
+          />
+          <Route
+            path="/neet/online-coaching-class-12"
+            element={<Class12Program />}
+          />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+}
+
+function Landing() {
+  return (
+    <>
+      <div>Welcome to clone of Allen.in</div>
+    </>
+  );
+}
+
+function Class11Program() {
+  return (
+    <>
+      <div>You are in NEET - Class 11 Program</div>
+    </>
+  );
+}
+
+function Class12Program() {
+  return (
+    <>
+      <div>You are in NEET - Class 12 Program</div>
+    </>
+  );
+}
+```
+
+- To make the application a truly SinglePageApplication, React should only load the required/ changed content only. Then there will not be any loader at the browser title and no unnecessary network calls will be sent out. Use the inbuilt `Link` in side browserRouter component
+
+```jsx
+import "./App.css";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+
+function App() {
+  //cloning - https://allen.in
+  return (
+    <>
+      <BrowserRouter>
+        <div>
+          <Link to="/" style={{ padding: 10 }}>
+            HomePage
+          </Link>
+          <Link to="/neet/online-coaching-class-11" style={{ padding: 10 }}>
+            NEET Class 11
+          </Link>
+          <Link to="/neet/online-coaching-class-12" style={{ padding: 10 }}>
+            NEET Class 12
+          </Link>
+        </div>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route
+            path="/neet/online-coaching-class-11"
+            element={<Class11Program />}
+          />
+          <Route
+            path="/neet/online-coaching-class-12"
+            element={<Class12Program />}
+          />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+}
+
+function Landing() {
+  return (
+    <>
+      <div>Welcome to clone of Allen.in</div>
+    </>
+  );
+}
+
+function Class11Program() {
+  return (
+    <>
+      <div>You are in NEET - Class 11 Program</div>
+    </>
+  );
+}
+
+function Class12Program() {
+  return (
+    <>
+      <div>You are in NEET - Class 12 Program</div>
+    </>
+  );
+}
+```
+
+#### useNavigate
+
+- another way for users to navigate the routes
+
+```jsx
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  useNavigate,
+} from "react-router-dom";
+
+export default function App() {
+  return (
+    <>
+      <BrowserRouter>
+        <div>
+          <Link to="/" style={{ padding: 10 }}>
+            HomePage
+          </Link>
+          <Link to="/neet/online-coaching-class-11" style={{ padding: 10 }}>
+            NEET Class 11
+          </Link>
+          <Link to="/neet/online-coaching-class-12" style={{ padding: 10 }}>
+            NEET Class 12
+          </Link>
+        </div>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route
+            path="/neet/online-coaching-class-11"
+            element={<Class11Program />}
+          />
+          <Route
+            path="/neet/online-coaching-class-12"
+            element={<Class12Program />}
+          />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+}
+
+function Landing() {
+  return (
+    <>
+      <div>Welcome to clone of Allen.in</div>
+    </>
+  );
+}
+
+function Class12Program() {
+  const navigate = useNavigate();
+
+  function goToHome() {
+    navigate("/");
+  }
+
+  return (
+    <>
+      <div>You are in NEET - Class 12 Program</div>
+      <button onClick={goToHome}>Go Home</button>
+    </>
+  );
+}
+```
+
+#### Layouts in react
+
+- Application should have a layout. A layout provides structure to the app.
+- Example layout - Header/ navbar at the top > content in the middle > footer in the bottom of the app
+
+```jsx
+import { BrowserRouter, Routes, Route, Link, Outlet } from "react-router-dom";
+
+export default function App() {
+  //cloning - https://allen.in
+  return (
+    <>
+      <BrowserRouter>
+        <Routes>
+          {/*Single route that implements layout in react. all other routes are its children*/}
+          <Route path="/" element={<Layout />}>
+            <Route path="/" element={<Landing />} />
+            <Route
+              path="/neet/online-coaching-class-11"
+              element={<Class11Program />}
+            />
+            <Route
+              path="/neet/online-coaching-class-12"
+              element={<Class12Program />}
+            />
+            {/*If any route other than the above is accessed, we should display page not found*/}
+            <Route path="*" element={<PageNotFound />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+}
+
+function Layout() {
+  return (
+    <>
+      <div style={{ height: "100vh" }}>
+        {/*HEADER*/}
+        <div style={{ height: "10vh" }}>WEBSITE LOGO</div>
+        {/*NAVBAR*/}
+        <div style={{ height: "10vh" }}>
+          <Link to="/" style={{ padding: 10 }}>
+            HomePage
+          </Link>
+          <Link to="/neet/online-coaching-class-11" style={{ padding: 10 }}>
+            NEET Class 11
+          </Link>
+          <Link to="/neet/online-coaching-class-12" style={{ padding: 10 }}>
+            NEET Class 12
+          </Link>
+        </div>
+        {/*CONTENT*/}
+        <div style={{ height: "70vh" }}>
+          {/*Outlet is builtin component that will display the children fo the Layout component*/}
+          <Outlet />
+        </div>
+        {/*FOOTER*/}
+        <div style={{ height: "10vh" }}>Footer | Contact Us</div>
+      </div>
+    </>
+  );
+}
+
+function Landing() {
+  return (
+    <>
+      <div>Welcome to clone of Allen.in</div>
+    </>
+  );
+}
+
+function Class11Program() {
+  return (
+    <>
+      <div>You are in NEET - Class 11 Program</div>
+    </>
+  );
+}
+
+function Class12Program() {
+  return (
+    <>
+      <div>You are in NEET - Class 12 Program</div>
+    </>
+  );
+}
+
+function PageNotFound() {
+  return (
+    <>
+      <div>Sorry page not found 404</div>
+    </>
+  );
+}
+```
+
+#### useRef
+
+- It creates a reference to a dom element that persists when re-render happens.
+- It does not trigger a re-render when the value changes. It can update the values without triggering re-render
+
+```jsx
+{
+  /*REFERENCE TO AN ELEMENT*/
+  /*The focus is put on username field whenever user clicks on submit*/
+}
+import { useRef } from "react";
+import "./App.css";
+
+export default function App() {
+  return (
+    <>
+      <Landing />
+    </>
+  );
+}
+
+function Landing() {
+  const inputRef = useRef();
+  function focusOnInput() {
+    // document.getElementById("id_username").focus();
+    inputRef.current.focus();
+  }
+
+  return (
+    <>
+      <div>Welcome to clone of Allen.in</div>
+      <div>
+        <input
+          ref={inputRef}
+          id="id_username"
+          type="text"
+          placeholder="Username"
+        />
+        <input type="text" placeholder="Password" />
+        <button onClick={focusOnInput}>Submit</button>
+      </div>
+    </>
+  );
+}
+```
+
+```jsx
+{
+  /*REFERENCE TO A VALUE*/
+  /*A clock that has a pause and unpause button*/
+}
+import { useState, useEffect, useRef } from "react";
+
+export default function App() {
+  return (
+    <>
+      <div className="grid-container">
+        <div className="item10">
+          <h2>useRef - Reference by value</h2>
+          <RefTimer></RefTimer>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function RefTimer() {
+  const [clock, setClock] = useState(0);
+  //let timerval = 0; //will not work - timerval will be reset on every re-render of RefTimer.
+  //const [timerval,setTimerval] =useState(0); //will not work - 1 exra re-render will happen when setTimerval is called. It will make timer incorrect
+  const timerval = useRef();
+
+  function startClock() {
+    let value = setInterval(function () {
+      setClock((c) => c + 1);
+    }, 1000);
+    //timerval = value;
+    //setTimerval(value);
+    timerval.current = value;
+  }
+
+  function pauseClock() {
+    clearInterval(timerval.current);
+  }
+
+  return (
+    <>
+      <div>{clock}</div>
+      <button onClick={startClock}>Start</button>
+      <button onClick={pauseClock}>Pause</button>
+    </>
+  );
+}
+```
+
+### lksdfj
