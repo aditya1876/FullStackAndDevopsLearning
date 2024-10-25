@@ -2171,4 +2171,129 @@ function RefTimer() {
 }
 ```
 
-### lksdfj
+### Context API
+
+- The Problem -- PROP DRILLING: Happens when state variables are defined in the top level Component but are actually needed in some component that is defined some levels deeper. The state variables will have to be passed on to each component in between the top and the actual component. This makes the code hard to understand and difficult to maintain.
+
+```jsx
+{
+  /*Example of passing props. NOT and example of prop-drilling problem*/
+}
+import { useState } from "react";
+import "./App.css";
+
+export default function App() {
+  return (
+    <>
+      <div>MY REACT APP - STATE EXPERIMENTS</div>
+      <LightBulb></LightBulb>
+    </>
+  );
+}
+
+function LightBulb() {
+  const [isBulbOn, setIsBulbOn] = useState(true);
+
+  return (
+    <>
+      <ShowBulb isBulbOn={isBulbOn}></ShowBulb>
+      <ControlBulb isBulbOn={isBulbOn} setIsBulbOn={setIsBulbOn}></ControlBulb>
+    </>
+  );
+}
+
+function ShowBulb({ isBulbOn }) {
+  return (
+    <>
+      <div>Is bulb on?: {isBulbOn ? "Yes" : "No"}</div>
+    </>
+  );
+}
+
+function ControlBulb({ isBulbOn, setIsBulbOn }) {
+  function toggleBulb() {
+    //setIsBulbOn((toggle) => !toggle);
+    setIsBulbOn(!isBulbOn);
+  }
+
+  return (
+    <>
+      <button onClick={toggleBulb}>Toggle Bulb</button>
+    </>
+  );
+}
+```
+
+- The Solution - Context API
+  - Context.provider wraps the parent component. All the children of this parent will have access to this context.
+  - No need to pass the state variables as props.
+  - No need for the children to accept the props as function arguments.
+
+```jsx
+//STEP 1 - Create Context
+import { createContext, useContext, useState } from "react";
+const BulbContext = createContext();
+
+//STEP 1.5 - Create a function to pass the state variables to the context
+function BulbProvider({ childred }) {
+  const [isBulbOn, setIsBulbOn] = useState(true);
+
+  return (
+    <>
+      <BulbContext.Provider
+        value={{ isBulbOn: isBulbOn, setIsBulbOn: setIsBulbOn }}
+      >
+        {children}
+      </BulbContext.Provider>
+      ;
+    </>
+  );
+}
+
+function App() {
+  const [isBulbOn, setIsBulbOn] = useState(true);
+  return (
+    <>
+      <div>MY REACT APP - STATE EXPERIMENTS</div>
+      {/*STEP 2 - Wrap the top level(parent component) with the context component */}
+      <BulbProvider>
+        <LightBulb></LightBulb>
+      </BulbProvider>
+    </>
+  );
+}
+
+function LightBulb() {
+  return (
+    <>
+      {/*STEP 2 - No need to pass the props anymore. All children of LightBulb have access to the context*/}
+      <ShowBulb></ShowBulb>
+      <ControlBulb></ControlBulb>
+    </>
+  );
+}
+
+function ShowBulb() {
+  //STEP 3- No need to accept props in function args. Can directly use the variable from the context
+  const { isBulbOn } = useContext(BulbContext);
+  return (
+    <>
+      <div>Is bulb on?: {isBulbOn ? "Yes" : "No"}</div>
+    </>
+  );
+}
+
+function ControlBulb() {
+  const { isBulbOn, setIsBulbOn } = useContext(BulbContext);
+
+  function toggleBulb() {
+    setIsBulbOn(!isBulbOn);
+  }
+
+  return (
+    <>
+      <button onClick={toggleBulb}>Toggle Bulb</button>
+    </>
+  );
+}
+```
