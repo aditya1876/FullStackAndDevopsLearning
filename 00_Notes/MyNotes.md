@@ -2297,3 +2297,223 @@ function ControlBulb() {
   );
 }
 ```
+
+### Custom Hooks
+
+- should start with `use`
+- it should another hook inside it
+- Dont write normal function using a hook(useState, useEffect). Either write custom hooks or Components.
+-
+
+```jsx
+import { useState } from "react";
+
+export default function App() {
+  const { mycount, customIncreaseCount } = useMyCustomCounter();
+  return (
+    <>
+      <div>
+        <h2>My Custom Hooks App</h2>
+        <CounterWithoutCustomHooks></CounterWithoutCustomHooks>
+        <CounterWithCustomHooks></CounterWithCustomHooks>
+        <button onClick={customIncreaseCount}>With custom: {mycount}</button>
+      </div>
+    </>
+  );
+}
+
+//Custom Hook Creation
+//must start with 'use'
+//must call another hook inside
+function useMyCustomCounter() {
+  const [mycount, setMyCount] = useState(0);
+
+  function customIncreaseCount() {
+    setMyCount((c) => c + 1);
+  }
+
+  return {
+    mycount: mycount,
+    customIncreaseCount: customIncreaseCount,
+  };
+}
+
+function CounterWithoutCustomHooks() {
+  const [count1, setCount1] = useState(0);
+
+  function increaseCount1() {
+    setCount1((c) => c + 1);
+  }
+
+  return (
+    <>
+      <button onClick={increaseCount1}>
+        Couter Without Custom Hooks {count1}
+      </button>
+    </>
+  );
+}
+
+function CounterWithCustomHooks() {
+  const { mycount, customIncreaseCount } = useMyCustomCounter(); //using the custom hook. notice the {} instead of[]
+
+  return (
+    <>
+      <button onClick={customIncreaseCount}>
+        Counter with Custom Hooks: {mycount}
+      </button>
+    </>
+  );
+}
+```
+
+```jsx
+import { useState, useEffect } from "react";
+import "./App.css";
+
+export default function App() {
+  const [postId, setPostId] = useState(1);
+  const { post, isLoading } = useMyFetch(
+    "https://jsonplaceholder.typicode.com/posts/" + postId,
+  );
+
+  return (
+    <>
+      <div>
+        <h2>My Custom Hooks App</h2>
+        <button onClick={() => setPostId(1)}>Get Post 1</button>
+        <button onClick={() => setPostId(2)}>Get Post 2</button>
+        <button onClick={() => setPostId(3)}>Get Post 3</button>
+        {isLoading ? (
+          "Loading..."
+        ) : (
+          <div>Post data: {JSON.stringify(post)}</div>
+        )}
+      </div>
+    </>
+  );
+}
+
+//Custom Hook
+function useMyFetch(url) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [post, setPost] = useState({});
+
+  async function getPost() {
+    setIsLoading((s) => true);
+    const response = await fetch(url);
+    const jsonResp = await response.json();
+    setPost(() => jsonResp);
+    setIsLoading((s) => false);
+  }
+
+  useEffect(() => {
+    getPost();
+  }, [url]);
+
+  return { post: post, isLoading: isLoading };
+}
+```
+
+#### usePrev
+
+- when currState is 0, prev = undefined
+- when currState is 1, prev = 0.
+- how does it work? - <https://giacomocerquone.com/blog/life-death-useprevious-hook/>
+
+```jsx
+function usePrev(value) {
+  const ref = useRef();
+
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+
+  return ref.current;
+}
+
+function UsePrevImplementation() {
+  const [currState, setCurrState] = useState(0);
+  const prev = usePrev(currState);
+
+  return (
+    <>
+      <button onClick={() => setCurrState((c) => c + 1)}>update</button>
+      <div>Current State value: {currState}</div>
+      <div>Previous State value: {prev}</div>
+    </>
+  );
+}
+```
+
+#### useDebounce
+
+- usually used in search boxes that search as the user types.
+- we don't want to call the DB every time the user types a character in the field. We want to make the expensive call after user has stopped typing for a few milliseconds.
+- For that we use debounce. Every time user enters a character, we want to call debouncedFn. This function will wait for some time (200ms here) before sending the data to backend. If user enters some more characters within 200ms, the current timer is stopped and new timer for 200 ms starts. Only once the user has stopped typing or waiting for more than 200ms, does the API call to backed is sent.
+
+```jsx
+function useDebounce(fnToRun) {
+  const currentTimer = useRef();
+
+  const fn = () => {
+    clearTimeout(currentTimer.current); //clear the running timer
+    currentTimer.current = setTimer(fnToRun, 200); //starts another timer for 200ms
+  };
+
+  return fn;
+}
+
+export default function App() {
+  function sendDataToBackend() {
+    console.log("sending data");
+  }
+
+  const debouncedFn = useDebounce(sendDataToBackend);
+
+  return (
+    <>
+      <input type="text" onChange={debouncedFn}></input>
+    </>
+  );
+}
+```
+
+- Another implementation. Capture the input value till user stops typing for 200ms and then make the call.
+
+```jsx
+const useDebounce = (value, delay) => {
+  const [debouncedVal, setDebouncedVal] = useState(value);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDebouncedVal(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+};
+
+export default function App() {
+  const [inputVal, setInputVal] = useState();
+  const debouncedVal = useDebounce(inputVal, 200);
+
+  function updateVal(e) {
+    //gets the event from input field
+    setInputVal(e.target.value); //same as document.getElementById("input").value;
+  }
+
+  useEffect(() => {
+    //expensive operation like API calls
+    console.log("API call to backend");
+  }, [debouncedVal]);
+
+  return (
+    <>
+      <input type="text" onChange={updateVal}></input>
+    </>
+  );
+}
+```

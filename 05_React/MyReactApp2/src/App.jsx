@@ -50,6 +50,10 @@ export default function App() {
           <h2>useRef - Reference by value</h2>
           <RefTimer></RefTimer>
         </div>
+        <div className="item11">
+          <h2>Implementing usePrev</h2>
+          <UsePrevImplementation></UsePrevImplementation>
+        </div>
       </div>
     </>
   );
@@ -357,6 +361,29 @@ function RefTimer() {
       <div>{clock}</div>
       <button onClick={startClock}>Start</button>
       <button onClick={pauseClock}>Pause</button>
+    </>
+  );
+}
+
+function usePrev(value) {
+  const ref = useRef();
+
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+
+  return ref.current;
+}
+
+function UsePrevImplementation() {
+  const [currState, setCurrState] = useState(0);
+  const prev = usePrev(currState);
+
+  return (
+    <>
+      <button onClick={() => setCurrState((c) => c + 1)}>update</button>
+      <div>Current State value: {currState}</div>
+      <div>Previous State value: {prev}</div>
     </>
   );
 }
