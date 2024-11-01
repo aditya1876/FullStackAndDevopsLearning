@@ -2517,3 +2517,83 @@ export default function App() {
   );
 }
 ```
+
+### RECOIL
+
+- State management library (like Redux,mobX, useState)
+- useContext will rerender more than necessary, Recoil will only render the element being changed.
+
+- `ATOM`
+
+  - units of state that can be read and written to from any component.
+  - when the state of an atom changes, all the components that subscribe to the atom will re-render
+  - should have default value and a key
+
+- Installation - `npm install recoil`
+- wrap application inside recoil root component
+
+```jsx
+import { RecoilRoot } from "recoil";
+
+export default function App() {
+  return (
+    <>
+      <RecoilRoot>
+        .. ..
+        <Counter />
+        .. ..
+      </RecoilRoot>
+    </>
+  );
+}
+```
+
+- Add atoms to your app
+
+```jsx
+//create atom files in `<ProjectRoot>/src/store/atoms/` folder
+//atom file - counter.js
+//add following in the counter.js file
+import { atom } from "recoil";
+
+export const counterAtom = atom({
+  default: 0,
+  key: "counter",
+});
+```
+
+- Update application to use the atom
+
+```jsx
+import { counterAtom } form ".store/atoms/counter"
+...
+...
+function Counter(){
+  return(<>
+    <IncreaseCount />
+    <DisplayCount />
+  </>);
+}
+
+function IncreaseCount(){
+  const setCount = useSetRecoilState(counterAtom); //only needs the setstate function
+
+  function inc(){
+    setCount(c=>c+1);
+  }
+
+  return(<>
+    <button onClick={inc}>Increase</button>
+  </>)
+}
+
+function DisplayCount(){
+  const count = useRecoilValue(counterAtom); //only requires the state variable
+
+  return(<>
+    <div>Count Value: {count}</div>
+  </>)
+}
+
+
+```
