@@ -19,6 +19,24 @@ export default function App() {
             <RecoilParent></RecoilParent>
           </RecoilRoot>
         </div>
+        <div className="item4">
+          <RecoilRoot>
+            <h4>Counter with Selector</h4>
+            <CounterBySelector />
+          </RecoilRoot>
+        </div>
+        <div className="item5">
+          <RecoilRoot>
+            <h4>Asynchronous Data queries in Recoil</h4>
+            <AsyncDataQueries></AsyncDataQueries>
+          </RecoilRoot>
+        </div>
+        {/* <div className="item6"> */}
+        {/*   <RecoilRoot> */}
+        {/*     <h4>Displaying mulitple items using AtomFamily</h4> */}
+        {/*     <AtomFamilyRecoil></AtomFamilyRecoil> */}
+        {/*   </RecoilRoot> */}
+        {/* </div> */}
       </div>
     </>
   );
@@ -166,5 +184,106 @@ function DisplayValueRecoilCounter() {
 }
 /*Item3<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
 /*Item4>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+import { isEvenSelector } from "./store/selectors/isEvenSelector.js";
+function CounterBySelector() {
+  return (
+    <>
+      <IncButtonSelector />
+      <DecButtonSelector />
+      <DisplayCounterValueSelector />
+      <DisplayIsEvenValueSelector />
+      {/*
+       */}
+    </>
+  );
+}
 
+function IncButtonSelector() {
+  const setCount = useSetRecoilState(counterAtom);
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          setCount((c) => c + 2);
+        }}
+      >
+        Increase By 2
+      </button>
+    </>
+  );
+}
+
+function DecButtonSelector() {
+  const setCount = useSetRecoilState(counterAtom);
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          setCount((c) => c - 1);
+        }}
+      >
+        Decrease by 1
+      </button>
+    </>
+  );
+}
+
+function DisplayCounterValueSelector() {
+  const count = useRecoilValue(counterAtom);
+
+  return (
+    <>
+      <div>Counter Value: {count}</div>
+    </>
+  );
+}
+
+function DisplayIsEvenValueSelector() {
+  const isEven = useRecoilValue(isEvenSelector);
+
+  return (
+    <>
+      <div>{isEven ? "Even" : "Odd"}</div>
+    </>
+  );
+}
 /*Item4<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
+/*Item5>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+import { dataAtom } from "./store/atoms/dataAtom.js";
+function AsyncDataQueries() {
+  const postData = useRecoilValue(dataAtom);
+
+  return (
+    <>
+      <div>Post Title: {postData.title}</div>
+    </>
+  );
+}
+/*Item5<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
+/*Item6>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+// import { todosAtomFamily } from "./store/atoms/todosAtomFamily.js";
+// function AtomFamilyRecoil() {
+//   return (
+//     <>
+//       <Todo id={1} />
+//       <Todo id={3} />
+//     </>
+//   );
+// }
+//
+// function Todo(id) {
+//   const todoData = useRecoilValue(todosAtomFamily(id));
+//
+//   return (
+//     <>
+//       <div>testing</div>
+//       <div>Displaying Todo with id: {id}</div>
+//       <div>Todo Title: {todoData.title}</div>
+//       <div>Todo Desc:{todoData.desc}</div>
+//       <div>{todoData.completed ? "Done" : "Not Done"}</div>
+//     </>
+//   );
+// }
+/*Item6<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/

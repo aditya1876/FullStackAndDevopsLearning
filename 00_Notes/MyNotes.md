@@ -2565,7 +2565,7 @@ export const counterAtom = atom({
 - Update application to use the atom
 
 ```jsx
-import { counterAtom } form ".store/atoms/counter"
+import { counterAtom } form "./store/atoms/counter"
 ...
 ...
 function Counter(){
@@ -2597,3 +2597,134 @@ function DisplayCount(){
 
 
 ```
+
+### Memo
+
+- React behavior - if a component re-renderds, all its children also re-render
+- with memo, if a component re-renders, only the children that are sent the props re-render. Other children components do not re-render.
+- React re-rendering - <https://whereisthemouse.com/react-components-when-do-children-re-render>
+
+```jsx
+import { memo } from "react";
+
+const Buttons = memo(function () {
+  const setCount = useSetRecoilState(counter);
+
+  function increase() {
+    setCount((c) => c + 1);
+  }
+
+  function decrease() {
+    setCount((c) => c - 1);
+  }
+
+  return (
+    <div>
+      <button onClick={increase}>Increase</button>
+      <button onClick={decrease}>Decrease</button>
+    </div>
+  );
+});
+```
+
+### Selectors
+
+- A selector represents a piece of derived state. You can think of derived state as the output of passing state to a pure function that derives a new value from the said state.
+
+- Create a selector
+
+```jsx
+//create file <projectRoot>/src/selectors/isEvenSelector.js
+
+import {counterAtom} from "../atoms/counter.js"
+import {seletor} form "recoil";
+
+export const isEvenSelector = selector({
+  key: "isEvenSelector",
+  get: function({get}){
+        const currentCount = get(counterAtom); //get required data from atom
+        const isEven = (currentCount %2 ==0);
+        return isEven;
+      }
+});
+```
+
+- use selector in app
+
+```jsx
+import {RecoilRoot, useRecoilValue, useSetRecoilState} form "recoil";
+import {counterAtom} from "./src/atoms/coutner.js";
+import {isEvenSelector} from "./src/selectors/isEvenSelector.js";
+export default App(){
+  return (<>
+    <RecoilRoot>
+      <IncButtonSelector />
+      <DecButtonSelector />
+      <DisplayCounterValueSelector />
+      <DisplayIsEvenValueSelector />
+    </RecoilRoot>
+  </>)
+}
+
+function IncButtonSeletor(){
+  const setCount = useSetRecoilState(counterAtom);
+
+  return (<>
+    <button onClick={()=>{setCount(c=>c+2)}}>Increase By 2</button>
+  </>)
+}
+
+function DecButtonSelector(){
+  const setCount = useSetRecoilState(counterAtom);
+
+  return (<>
+    <button onClick={()=> {setCount(c=>c-1)}}>Decrease By 1</button>
+  </>)
+}
+
+function DisplayCounterValueSelector(){
+  const count = useRecoilValue(coutnerAtom);
+
+  return (<>
+    <div>Counter Value: {count}</div>
+  </>)
+}
+
+function DisplayIsEvenValueSelector(){
+  const isEven = useRecoilValue(isEvenSeletor); //<-----getting the selector value
+
+  <div>{isEven ? "Even":"Odd"}</div>
+}
+```
+
+### Asynchronous Data Queries using atoms
+
+- Used in situations where data needs to be fetched and displayed.
+
+```jsx
+//Atom definition uses selector in this case.
+import axios from "axios";
+import { atom, selector } from "recoil";
+
+export const dataAtom = atom({
+  key: "dataAtom",
+  default: selector({
+    key: "dataSelector",
+    get: async () => {
+      //simulating delay
+      //await new Promise((r) => setTimeout(r, 2000)); //sleeps for 2 sec -- stops the entire site from loading
+      const resp = await axios.get(
+        "https://jsonplaceholder.typicode.com/posts/1",
+      );
+      return resp.data;
+    },
+  }),
+});
+```
+
+### Atom Family
+
+- Used when components are generated dynamically and each component may require different atom data.
+- Rather than creating a new atom dynamically for each component(this has other problems like duplicate components will create separate atoms rather than pointing to same atom), we can use AtomFamily.
+
+- Example - Todo App
