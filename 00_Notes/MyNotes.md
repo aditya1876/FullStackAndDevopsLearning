@@ -2726,5 +2726,125 @@ export const dataAtom = atom({
 
 - Used when components are generated dynamically and each component may require different atom data.
 - Rather than creating a new atom dynamically for each component(this has other problems like duplicate components will create separate atoms rather than pointing to same atom), we can use AtomFamily.
-
 - Example - Todo App
+
+```jsx
+//TODO data
+export const TODOs = [
+  {
+    id: 1,
+    title: "My todo 1",
+    desc: "Description of todo 1",
+    completed: false,
+  },
+  {
+    id: 2,
+    title: "My todo 2",
+    desc: "Description of todo 2",
+    completed: false,
+  },
+  {
+    id: 3,
+    title: "My todo 3",
+    desc: "Description of todo 3",
+    completed: true,
+  },
+];
+
+//todosAtomFamily.js
+import TODOs from "../../data/todos";
+import { atomFamily } from "recoil";
+
+export const todoAtomFamily = atomFamily({
+  key: "todoAtomFamily",
+  default: (id) => {
+    return TODOs.find((x) => x.id === id);
+  },
+});
+
+//App.jsx
+import { todosAtomFamily } from "./store/atoms/todosAtomFamily.js";
+function AtomFamilyRecoil() {
+  return (
+    <>
+      <Todo id={1} />
+      <Todo id={3} />
+    </>
+  );
+}
+
+function Todo(id) {
+  const todoData = useRecoilValue(todosAtomFamily(id));
+
+  return (
+    <>
+      <div>testing</div>
+      <div>Displaying Todo with id: {id}</div>
+      <div>Todo Title: {todoData.title}</div>
+      <div>Todo Desc:{todoData.desc}</div>
+      <div>{todoData.completed ? "Done" : "Not Done"}</div>
+    </>
+  );
+}
+```
+
+- When asynchronous calls are required,like fetching data from DB, use `selectorFamily` in atomFamily definition. (see atom definition above). Notice the difference in get for selectorFamily definition
+
+```jsx
+export const todosAtomFamily = atomFamily({
+  key: "todosatomfamily",
+  default: selectorFamily({
+    key: "todoselectorFamily",
+    get:
+      (id) =>
+      async ({ get }) => {
+        const res = await axios.get(
+          `https://jsonplaceholder.typicode.com/todos/id=${id}`,
+        );
+        return res.json();
+      },
+  }),
+});
+```
+
+### useRecoilStateLoadable/ useRecoilValueLoadable
+
+- What happens when atomFamily has not returned the state variable yet?
+- You can display loading... (or anything else) while we wait for the content to load.
+
+- Useful for showing skeleton on ui while the data loads. (google - mui skeleton)
+
+```jsx
+//component displayed is <Todo>
+//atomFamily is todoAtomFamily
+
+function Todo() {
+  const [todoObj, setTodoObj] = useRecoilStateLoadable(todosAtomFamily(id)); //if you also want to set todo
+  const todoObj2 = useRecoilValueLoadable(todoAtomFamily(id)); //if you only care about the value of the todo
+  //todoObj and todoObj2 are the same
+
+  if (todoObj.state === "loading...") {
+    return (
+      <>
+        <div> Please wait... </div>
+      </>
+    );
+  } else if (todoObj.state === "hasValue") {
+    return (
+      <>
+        <div>Todo Title: {todoObj.contents.title}</div>
+        <div>Todo Desc: {todoObj.contents.desc}</div>
+        <div>
+          Todo Status: {todoObj.contents.completed ? "Done" : "Not Done"}
+        </div>
+      </>
+    );
+  } else if (todoObj.state === "hasError") {
+    return (
+      <>
+        <div>Some error occured</div>
+      </>
+    );
+  }
+}
+```

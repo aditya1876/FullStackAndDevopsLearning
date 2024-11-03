@@ -273,7 +273,7 @@ function AsyncDataQueries() {
 //   );
 // }
 //
-// function Todo(id) {
+// function Todo({ id }) {
 //   const todoData = useRecoilValue(todosAtomFamily(id));
 //
 //   return (
@@ -282,7 +282,7 @@ function AsyncDataQueries() {
 //       <div>Displaying Todo with id: {id}</div>
 //       <div>Todo Title: {todoData.title}</div>
 //       <div>Todo Desc:{todoData.desc}</div>
-//       <div>{todoData.completed ? "Done" : "Not Done"}</div>
+//       <div>Todo Status: {todoData.completed ? "Done" : "Not Done"}</div>
 //     </>
 //   );
 // }
