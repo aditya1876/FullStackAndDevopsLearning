@@ -2848,3 +2848,133 @@ function Todo() {
   }
 }
 ```
+
+## TAILWIND
+
+- Frontend/ Component library
+- Things to know to work (to make you framework agnostic):
+  - Flex
+  - Grids
+  - Responsiveness
+  - Background Colour, Text Color, Hovering
+
+### Flex
+
+- A div tag takes the entire width usually
+
+![div behavior](./images/Tailwind_01.png)
+
+- adding flex will make children align in single line
+  ![flex](./images/Tailwind_02.png)
+
+- use justify content to properly space elements
+  ![justifyContent1](./images/Tailwind_03.png)
+  ![justifyContent_flexStart](./images/Tailwind_04.png)
+  ![justifyContent_flexEnd](./images/Tailwind_05.png)
+  ![justifyContent_center](./images/Tailwind_06.png)
+  ![justifyContent_spaceBetween](./images/Tailwind_07.png)
+  ![justifyContent_spaceAround](./images/Tailwind_08.png)
+
+- to achieve the same in Tailwind
+
+```html
+<!--look for className tag. Tailwind uses specific class names to add styles. look up class names in their documentation-->
+
+<html>
+  <body style="background-color:black;">
+    <div className="flex justify-between">
+      <!-- tailwind above -->
+      <!-- Normal HTML styling below -->
+      <!-- <div style="display:flex; justify-content:space-between;"> -->
+      <div style="background-color:green;">data in div 1</div>
+      <div style="background-color:pink;">data in div 2</div>
+      <div style="background-color:blue;">data in div 3</div>
+    </div>
+  </body>
+</html>
+```
+
+### grids with Tailwind
+
+```jsx
+<html>
+  <body style="background-color:black;">
+    <div className="grid gird-cols-3">
+      <!-- creates a grid with 3 columns. three children get distributed in 3 columns -->
+      <div style="background-color:green;">data in div 1</div>
+      <div style="background-color:pink;">data in div 2</div>
+      <div style="background-color:blue;">data in div 3</div>
+    </div>
+  </body>
+</html>
+
+
+<html>
+  <body style="background-color:black;">
+    <div className="grid gird-cols-12">
+      <!-- creates a grid with 3 columns. three children get distributed in 3 columns -->
+      <div className="col-span-5" style="background-color:green;">data in div 1</div>
+      <div className="col-span-6" style="background-color:pink;">data in div 2</div>
+      <div className="col-span-1" style="background-color:blue;">data in div 3</div>
+      <!-- different elements have different widths-->
+    </div>
+  </body>
+</html>
+```
+
+### responsiveness
+
+- `https://tailwindcss.com/docs/responseve-design`
+
+- tailwind takes mobile first approach,i.e. default values in styling will apply to smaller/mobile screens. If we want the app to look different in bigger screens, we need to specify the same.
+- In code below, mobile screens will have divs with column width as 12 by default. When screen width goes above sm(small size in pixels defined by tailwind. Check documentation.), the column width will change to 9, when width goes above md col width will become 7, when width is lg or above number of cols will be 5 and so on..
+
+| size | min size |
+| :--: | :------: |
+|  sm  |  640px   |
+|  md  |  768px   |
+|  lg  |  1024px  |
+|  xl  |  1280px  |
+| 2xl  |  1536px  |
+
+```HTML
+<html>
+  <body style="background-color:black;">
+    <div className="grid gird-cols-12">
+      <div className="col-span-12 sm:col-span-9 md:col-span-7 lg:col-span-5 xl:col-span-3 2xl:col-span-2" style="background-color:green;">data in div 1</div>
+      <div className="col-span-12 sm:col-span-9 md:col-span-7 lg:col-span-5 xl:col-span-3 2xl:col-span-2" style="background-color:pink;">data in div 2</div>
+      <div className="col-span-12 sm:col-span-9 md:col-span-7 lg:col-span-5 xl:col-span-3 2xl:col-span-2" style="background-color:blue;">data in div 3</div>
+    </div>
+  </body>
+</html>
+
+```
+
+### Background, font, and other items in tailwind
+
+- There are default colours in tailwind and each has a shade from 50 to 950 values(see documentation)
+- You can define your own shades and save in config file.
+- Fonts available with specific font sizes - xs,sm,base, lg, xl
+- radius values = rounded-s-md, rounded-s-lg, rounded, rounded-s-lg,rounded-full, rounded-s-xl etc.
+
+```HTML
+<html>
+  <body style="background-color:black;">
+    <div className="grid gird-cols-12">
+      <div className="col-span-5" style="bg-green-500 text-red-500 text-xs">data in div 1</div>
+      <div className="col-span-6" style="bg-pink-50 text-blue-700 text-lg">data in div 2</div>
+      <div className="col-span-1" style="bg-blue-700 text-yellow-300 text-xl">data in div 3</div>
+    </div>
+  </body>
+</html>
+
+```
+
+### Installation
+
+- use the official documentation - `www.tailwindcss.com`
+
+- Create react app
+- run `npm install`
+- `npm install -D tailwindcss postcss autoprefixer`
+- `npx tailwindcss init -p`
