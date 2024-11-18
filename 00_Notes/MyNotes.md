@@ -2978,3 +2978,185 @@ function Todo() {
 - run `npm install`
 - `npm install -D tailwindcss postcss autoprefixer`
 - `npx tailwindcss init -p`
+
+## TYPESCRIPT
+
+|    Javascript    |   Typescript   |                                                        Comments                                                         |
+| :--------------: | :------------: | :---------------------------------------------------------------------------------------------------------------------: |
+|  Loosely typed   | Strongly typed | in strongly typed, language cannot change the variable type by itself `let x=10; x="test";` will not work in typescript |
+| Interpreted only |    compiled    |            typescript will do 2 types of compiation, converts it to javascript which inturn runs on browsers            |
+
+### Setup
+
+- Global installation (NOT preferred) - `npm install -g typescript`
+- Local installation
+
+```bash
+#initialization
+mkdir <projName> #create project folder
+cd projName #navigate inside the folder
+npm init -y #initialize node project. Creates package.json file.
+npm install -D typescript #installs typescript locally and creates package-lock.json. also adds node_modules folders and contents
+npx tsc --init #creates a tsconfig.json file
+#update tsconfig.json with following changes
+# update outDir -> ./dist/
+# update rootDir -->./src/
+
+#write code
+touch index.ts #create a typescript file and write code in
+
+#Compilation
+npx tsc -b #compiles the ts file and creates a correspoinding js file (index.js)
+
+#Running/ Execution
+node index.js
+```
+
+### tsconfig.json
+
+- This file contains the configuration defaults.
+- `target` - contains the oldest version of ECMA script that should be supported. If you write ts code in the latest format but have the target parameter set to support some older format, during compilation, the js file created will use the syntax as per the older script(for example, let x will change to var x)
+- `"rootDir": "./src",` --> where are the typescript files stored.
+- `"outDir": "./dist" or "./build"` --> where will the javascript files be created. These files should not be pushed to gihub(as devs will work on typscript files only). They are required when you want to deploy the code. So add `./dist or ./build` folder into .gitignore.
+- `removecomments` will remove comments from the javascript files that are created from typescript
+
+### Notes
+
+- Typescript converts .ts files to .js files internally at the time of compilation. This js file runs on the browser.
+- Typescript compilers -
+
+  - esbuild
+  - tsc(official)
+  - swc
+
+- Typescript is a superset of javascript. Everything javascript does can be done in typescript, but not everything that can be done by typescript can be done by javascript.
+
+- Types in typescript
+
+```typescript
+//provide the type explicitly
+const user1: {
+  firstName: string;
+  age: number;
+  address: { streetname: string; pin: number };
+} = {
+  firstName: "ram",
+  age: 10,
+  address: { streetname: "ayodhya", pin: 100001 },
+};
+
+//typscript can guess implecitly (hover over the user2 to see the type information(shift k on the word))
+const user2 = {
+  firstName: "Sita",
+  age: 11,
+  address: { streename: "Mithila", pin: 100002 },
+};
+```
+
+- Interfaces
+  - should start with a Capital letter(convention)
+
+```typescript
+interface userType {
+  firstName: string;
+  age: number;
+  isAdult: boolean;
+}
+
+function greeting2(user: userType) {
+  console.log(
+    `User has name: ${user.firstName} and age: ${user.age} and isAdult: ${user.isAdult}`,
+  );
+}
+
+const user3: userType = { firstName: "sdlfkj", age: 12, isAdult: false };
+
+//Address parameter in below interface is optional. make it optional by using ? in declaration
+interface MyUser {
+  fname: string;
+  age: number;
+  dob: Date;
+  address?: {
+    streetName: string;
+    pin: number;
+  };
+}
+
+let u1: MyUser = {
+  fname: "abc",
+  age: 10,
+  dob: new Date(),
+  address: {
+    streetName: "abc street",
+    pin: 987388,
+  },
+};
+
+let u2: MyUser = {
+  //address not used
+  fname: "def",
+  age: 21,
+  dob: new Date(),
+};
+```
+
+```typescript
+interface TodoInput {
+  todo: {
+    title: string;
+    description: string;
+    isDone: boolean;
+  };
+  lastDoneAt: Date;
+}
+
+function Todo(props: TodoInput) {
+  //some code here
+}
+
+//calling from app.jsx
+// <Todo todo={{
+//   title: "Go to gym",
+//   description: "gym is good",
+//   isDone: false,
+// }},
+// lastDoneAt={new Date()} />
+```
+
+- TYPES
+
+  - Similar to Interfaces but with additional functionality
+  - Allows union of types
+  - Allows intersection of types
+
+  ```typescript
+  //UNION OF TYPES
+  type stringOrNumber = string | number; //union of types
+
+  function getUserId(testid: stringOrNumber) {
+    console.log(`Userid of the user is ${testid}`);
+  }
+
+  getUserId(101); //Userid of the user is 101
+  getUserId("A101BXC"); //userid of the user is A101BXC
+  getUserId("100"); //Userid of the user is 100
+
+  //INTERSECTION OF TYPES
+  type Employee = {
+    name: stirng;
+    startDate: Date;
+  };
+
+  type Manager = {
+    name: stirng;
+    department: string;
+  };
+
+  type TeamLead = Employee & Manager; //intersection of types
+
+  const lead1: TeamLead = {
+    name: "testlead",
+    startDate: new Date(),
+    department: "software department",
+  };
+  ```
