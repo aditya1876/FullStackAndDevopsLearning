@@ -3165,3 +3165,122 @@ function Todo(props: TodoInput) {
     department: "software department",
   };
   ```
+
+## POSTGRES DATABASE
+
+### Sql Vs No SQL DBs
+
+- SQL DB
+  - hard to setup and change
+  - easier to scale
+- No SQL DB
+  - Easy to setup and change
+  - Hard to scale
+- Graph database
+  - stores data in the form of graphs
+  - for social media apps
+  - eg - neo4j
+- Vector Database
+  - used in ML usecases
+
+### Postgress Notes
+
+- It is a SQL database
+
+### Setup
+
+- Account creation:
+  - in Neon.tech:
+    - Create a database on the site and get the connection string.
+  - docker(for local db creation)
+- Installing in node project
+  - `npm install pg`
+  - `npm install -D @types/pg`
+- Connecting and operation in DB from project
+
+```typescript
+//import module
+import { Client } from "pg";
+
+//connecting to database
+const connectionString = "MyDBConnectionString";
+const connectionConfig = {
+  user: "postgressUser",
+  password: "dbuserPassword",
+  port: "port where the DB is listening",
+  host: "DB host",
+  databse: "databaseName",
+}; //add other parameters as required.
+
+//2 ways to connect(use any ONE)
+//Method 1:
+const pgClient = new Client(connectionString);
+
+//Method 2:
+const pgClient = new Client(connectionConfig);
+
+//actually connect. Asynchronous connection
+async function connectToDB() {
+  await pgClient.connect();
+}
+connectToDB();
+
+//Read from database
+async function readFromDB() {
+  const response = await pgClient.query("select * from users;");
+  console.log(response); // gets the full object
+  consote.log(response.rows); //gets only the data
+}
+
+//Update database
+async function updateDB() {
+  const response = await pgClient.query(
+    "update usersTable set username='test' where id='12'",
+  );
+  console.log(response);
+}
+
+//insert into database
+async function insertIntoDB() {
+  const response = await pgClient.query(
+    "insert into usersTable (col1, col2, col3) values (val1, val2, val3);",
+  );
+  console.log(response);
+}
+
+//delete from database
+async function deleteFromDB() {
+  const response = await pgClient.query("delete from usersTable where id='12'");
+  console.log(response);
+}
+```
+
+### More DB operation
+
+- getting data from one db call for another db call
+  ![SQLDatabase_operations_01](./images/sqldatabase_operations_01.png)
+  ![SQLDatabase_operations_02](./images/sqldatabase_operations_02.png)
+
+### Relationships in SQL
+
+![Relationships_in_SQL](./images/SQL_Relationships_01.png)
+
+#### SQL injection and prevention
+
+When sending a query to the database, if query is constructed like this:
+`insert into tableName (username, password) values( ${username}, ${password});`
+This can lead to sql injection when attacker provides password value as `'); DELETE FROM TABLENAME; Insert into tableName (username, password) values ('test123', 'eoiwru');'`
+
+This will make the actual query sent to the database:
+`insert into tableName (username, password) values ('someusername' , ''); DELETE FROM TABLENAME; Insert into tableName (username, password) vlaues ('test123', 'eoiwru');`
+
+In the above query, 3 sql statemetns will be executed, 2nd statement will delete all data in the table.
+
+To avoid such things, use the following format to write the query.
+
+```typescript
+const insertquery = `nsert into tableName (username, password) values ($1, $2)`;
+const response = await pgClient.query(insertquery, [username, password]);
+```
+
+This will ensure only 1 query is run by the db and complex password values will be taken as a password only.
