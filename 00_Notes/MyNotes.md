@@ -173,7 +173,7 @@ setTimeoutPromisified(3000).then(functionToCallback);
 
 - If node verion is > 20.6, you can use the following instead of installing dotenv module
 - Create `.env` file in the project folder.
-- Run the file - `node --env-file .env index.js`
+- Run the file - `node --env-file .env index.js` or `node --env-file=.env index.js`
 - For multiple envs, create separate .env_local or .env_prod and call that file when running the file
 
 ```javascript
@@ -3001,6 +3001,11 @@ npx tsc --init #creates a tsconfig.json file
 #update tsconfig.json with following changes
 # update outDir -> ./dist/
 # update rootDir -->./src/
+# remove comments from javascript file --> uncomment 'removeComments: true'
+
+#Optional - installing other dependencies/libraries
+npm install express
+npm install -D @types/express #installing the declarations (required for libs that give error when importing as `import express from 'express'`)
 
 #write code
 touch index.ts #create a typescript file and write code in
