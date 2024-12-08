@@ -3176,12 +3176,15 @@ function Todo(props: TodoInput) {
 - No SQL DB
   - Easy to setup and change
   - Hard to scale
+  - creates inconsistancies in app data
+  - runtime errors
 - Graph database
   - stores data in the form of graphs
   - for social media apps
   - eg - neo4j
 - Vector Database
   - used in ML usecases
+  - e.g. - Pinecone
 
 ### Postgress Notes
 
@@ -3190,9 +3193,13 @@ function Todo(props: TodoInput) {
 ### Setup
 
 - Account creation:
+
   - in Neon.tech:
     - Create a database on the site and get the connection string.
-  - docker(for local db creation)
+  - docker(for local db creation):
+    - `docker run --name my-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres`
+    - `postgresql://postgres:mysecretpassword@localhost:5432/postgres?sslmode=disable`
+
 - Installing in node project
   - `npm install pg`
   - `npm install -D @types/pg`
@@ -3201,6 +3208,16 @@ function Todo(props: TodoInput) {
 ```typescript
 //import module
 import { Client } from "pg";
+
+//CREATE DB SCHEMA
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY, // primary key, increments serially
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP //creates timestamp with timezone
+);
+
 
 //connecting to database
 const connectionString = "MyDBConnectionString";
@@ -3253,6 +3270,46 @@ async function deleteFromDB() {
   const response = await pgClient.query("delete from usersTable where id='12'");
   console.log(response);
 }
+
+//close DB connection
+await client.end(); // Close the client connection
+```
+
+```typescript
+import { Client } from "pg";
+// Async function to fetch user data from the database given an email
+async function getUser(email: string) {
+  const client = new Client({
+    host: "localhost",
+    port: 5432,
+    database: "postgres",
+    user: "postgres",
+    password: "mysecretpassword",
+  });
+
+  try {
+    await client.connect(); // Ensure client connection is established
+    const query = "SELECT * FROM users WHERE email = $1";
+    const values = [email];
+    const result = await client.query(query, values);
+
+    if (result.rows.length > 0) {
+      console.log("User found:", result.rows[0]); // Output user data
+      return result.rows[0]; // Return the user data
+    } else {
+      console.log("No user found with the given email.");
+      return null; // Return null if no user was found
+    }
+  } catch (err) {
+    console.error("Error during fetching user:", err);
+    throw err; // Rethrow or handle error appropriately
+  } finally {
+    await client.end(); // Close the client connection
+  }
+}
+
+// Example usage
+getUser("user5@example.com").catch(console.error);
 ```
 
 ### More DB operation
@@ -3265,7 +3322,121 @@ async function deleteFromDB() {
 
 ![Relationships_in_SQL](./images/SQL_Relationships_01.png)
 
-#### SQL injection and prevention
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE addresses (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    street VARCHAR(255) NOT NULL,
+    pincode VARCHAR(20),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+### Transactions in SQL
+
+- when certain operations require multiple sql queries, it can happen that the connection goes down or server crashes before all queries are run. In this case, we should not be committing any changes and revert all changes made so far. Transactions can help achieve this
+
+```sql
+BEGIN; -- Start transaction
+
+INSERT INTO users (username, email, password)
+VALUES ('john_doe', 'john_doe1@example.com', 'securepassword123');
+
+INSERT INTO addresses (user_id, city, country, street, pincode)
+VALUES (currval('users_id_seq'), 'New York', 'USA', '123 Broadway St', '10001');
+
+COMMIT;
+```
+
+```typescript
+import { Client } from "pg";
+
+async function insertUserAndAddress(
+  username: string,
+  email: string,
+  password: string,
+  city: string,
+  country: string,
+  street: string,
+  pincode: string,
+) {
+  const client = new Client({
+    host: "localhost",
+    port: 5432,
+    database: "postgres",
+    user: "postgres",
+    password: "mysecretpassword",
+  });
+
+  try {
+    await client.connect();
+
+    // Start transaction
+    await client.query("BEGIN");
+
+    // Insert user
+    const insertUserText = `
+            INSERT INTO users (username, email, password)
+            VALUES ($1, $2, $3)
+            RETURNING id;
+        `;
+    const userRes = await client.query(insertUserText, [
+      username,
+      email,
+      password,
+    ]);
+    const userId = userRes.rows[0].id;
+
+    // Insert address using the returned user ID
+    const insertAddressText = `
+            INSERT INTO addresses (user_id, city, country, street, pincode)
+            VALUES ($1, $2, $3, $4, $5);
+        `;
+    await client.query(insertAddressText, [
+      userId,
+      city,
+      country,
+      street,
+      pincode,
+    ]);
+
+    // Commit transaction
+    await client.query("COMMIT");
+
+    console.log("User and address inserted successfully");
+  } catch (err) {
+    await client.query("ROLLBACK"); // Roll back the transaction on error
+    console.error("Error during transaction, rolled back.", err);
+    throw err;
+  } finally {
+    await client.end(); // Close the client connection
+  }
+}
+
+// Example usage
+insertUserAndAddress(
+  "johndoe",
+  "john.doe@example.com",
+  "securepassword123",
+  "New York",
+  "USA",
+  "123 Broadway St",
+  "10001",
+);
+```
+
+### SQL injection and prevention
 
 When sending a query to the database, if query is constructed like this:
 `insert into tableName (username, password) values( ${username}, ${password});`
@@ -3284,3 +3455,27 @@ const response = await pgClient.query(insertquery, [username, password]);
 ```
 
 This will ensure only 1 query is run by the db and complex password values will be taken as a password only.
+
+### JOINS
+
+```text
+//INNER JOIN - Returns rows when there is at least one match in both tables. If there is no match, the rows are not returned. It's the most common type of join.
+SELECT users.username, addresses.city, addresses.country, addresses.street, addresses.pincode
+FROM users
+INNER JOIN addresses ON users.id = addresses.user_id;
+
+//LEFT JOIN - Returns all rows from the left table, and the matched rows from the right table.
+SELECT users.username, addresses.city, addresses.country, addresses.street, addresses.pincode
+FROM users
+LEFT JOIN addresses ON users.id = addresses.user_id;
+
+//RIGHT JOIN - Returns all rows from the right table, and the matched rows from the left table.
+SELECT users.username, addresses.city, addresses.country, addresses.street, addresses.pincode
+FROM users
+RIGHT JOIN addresses ON users.id = addresses.user_id;
+
+//FULL JOIN - Returns rows when there is a match in one of the tables. It effectively combines the results of both LEFT JOIN and RIGHT JOIN.
+SELECT users.username, addresses.city, addresses.country, addresses.street, addresses.pincode
+FROM users
+FULL JOIN addresses ON users.id = addresses.user_id;
+```
