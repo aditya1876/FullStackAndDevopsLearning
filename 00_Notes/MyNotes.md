@@ -3450,7 +3450,7 @@ In the above query, 3 sql statemetns will be executed, 2nd statement will delete
 To avoid such things, use the following format to write the query.
 
 ```typescript
-const insertquery = `nsert into tableName (username, password) values ($1, $2)`;
+const insertquery = `insert into tableName (username, password) values ($1, $2)`;
 const response = await pgClient.query(insertquery, [username, password]);
 ```
 
@@ -3478,4 +3478,215 @@ RIGHT JOIN addresses ON users.id = addresses.user_id;
 SELECT users.username, addresses.city, addresses.country, addresses.street, addresses.pincode
 FROM users
 FULL JOIN addresses ON users.id = addresses.user_id;
+```
+
+## ORM(Object Relationship Mapping)
+
+- ORM stands for Object-Relational Mapping, a programming technique used in software development to convert data between incompatible type systems in object-oriented programming languages. This technique creates a "virtual object database" that can be used from within the programming language.
+- ORMs are used to abstract the complexities of the underlying database into simpler, more easily managed objects within the code
+- ORMs let you interact with the database without worrying about the syntax(like sql)
+- eg= mongoose, prisma
+
+### Why ORMs
+
+- simpler syntax (no need to remember database specific syntax)
+- Switching databases becomes easier (code is abstracted on app side so that similar / same command can be run on new database also)
+- Provides type safety/Auto completion( useful in typescript where you can infer the response from database as an object. eg. const user = UserDb.find({email: "<abc@gmail.com>"}; const username = user.username))
+- Automatic Migration tracking
+  - It keeps a track of all the changes being made to the database schema(adding / removing a column from a table) from the begining of the database.
+  - This helps new developers to set up database with the same changes as the original database.
+  - The changes are tracked in a folder called `migrations` in the repository(automatically updated by the orms using commands)
+
+### PRISMA
+
+#### Setup
+
+```bash
+#base project setup
+npm init -y #initialize empty node project
+npm install typescript
+npx tsc --init #initilize typescript. creates folders and files
+#update outdir and rootdir in tsconfig file
+touch ./src/index.js #create file and add a console.log statement in it
+#update package.json file with script - "dev":"tsc -b && node dist/index.js"
+npm run dev
+
+#prisma installation
+npm install prisma
+npx prisma --init #creates folders required for prisma
+#above command creates the following in prisma/schema.prisma file
+  # 'generator.provider' is the type of project using the prisma library
+  # 'db.provider' is the type of database (postgresql is default. can be mongodb, sql etc)
+  # 'db.url' is the connection string that is added to .env file of the project(and is read from here)
+
+# now add schema to prisma/schema.prisma file
+```
+
+- if npx prisma init does not work, you may have to downgrage node version. Run the following command to install the specific version on which prisma will work - `nvm install v22.11.0`. This will install the specified version of node in the project folder only(you should run the command in the project folder only)
+
+#### Create /update schema
+
+- in prisma/schema.prisma file, add the following to create schama
+
+```text
+.
+.
+.
+model User {
+  id        Int     @default(autoincrement()) @id
+  username  String  @unique
+  password  String
+  age       Int?
+}
+
+model Todo{
+  id          Int @unique
+  title       String
+  description String?
+  completed   Boolean
+  userId      Int
+  time        DateTime
+}
+
+.
+.
+.
+```
+
+- Now migrate the schema to the database (migration here means any changes made to the database schema in the prisma.schema should be sent and executed in the actual database)
+
+#### Migrate Prisma
+
+```bash
+npx prisma migrate dev --name 'Initializing the schema'
+# this will ask for name. provide 1 word about what you are doing
+# This will automatically create a file called prisma/migrations/ datatime_name.sql file
+
+```
+
+- what if a table has some data already and you are adding new columns as migration.
+  - Either provide default value to the new column
+  - Or make the column optional
+
+```text
+.
+.
+.
+model User {
+  .
+  .
+  .
+  newCol1 String?  //<--- optional field
+  newCol2 String @default("Sample String")  //<---- make default value
+}
+.
+.
+.
+
+```
+
+#### Generate Prisma Client
+
+- This will generate a client(this client will give us functions like client.Users.create({name: "user", age: 19}) that will get converted to DB quries depending on the DB type like 'insert into Users (name, age) values(user, 19)')
+
+- `npx prisma generate`
+
+#### Using the client
+
+```typescript
+//index.ts
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function createUser() {
+  const resp = await prisma.user.create({
+    data: {
+      username: "Testuser",
+      password: "testing123",
+      age: 20,
+    },
+  });
+  console.log(resp);
+}
+
+//createUser();
+
+async function deleteUser() {
+  const resp = await prisma.user.delete({
+    where: {
+      id: 1,
+    },
+  });
+
+  console.log(resp);
+}
+
+async function updateUser() {
+  const resp = await prisma.user.update({
+    where: { id: 1 },
+    data: {
+      password: "newpass123",
+    },
+  });
+
+  console.log(resp);
+}
+
+async function findOneData() {
+  const oneUser = await prisma.user.findFirst({ where: { id: 1 } });
+
+  console.log(oneUser?.age, oneUser?.username);
+}
+
+async function findAll() {
+  const allUsers = await prisma.user.findMany();
+
+  console.log(
+    allUsers.map((user) => {
+      return [user.username, user.password];
+    }),
+  ); //print all username, password
+}
+
+async function findTen() {
+  const tenUsers = await prisma.user.findMany({ take: 10 });
+
+  console.log(
+    tenUsers.map((user) => {
+      return user;
+    }),
+  );
+}
+
+async function getAllUsernames() {
+  const allUsernames = await prisma.user.findMany({
+    select: {
+      username: true, //selets only data that have username
+    },
+  });
+
+  console.log(
+    allUsernames.map((user) => {
+      user.username;
+    }),
+  );
+}
+
+async function getTodoWithUser() {
+  const resp = await prisma.user.findFirst({
+    where: { id: 1 },
+    // include: { todos: true },
+  });
+
+  console.log(resp);
+}
+
+findOneData();
+findAll();
+findTen();
+getAllUsernames();
+
+console.log("Hello Earth!");
+}
 ```
