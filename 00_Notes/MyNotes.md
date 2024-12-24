@@ -3690,3 +3690,19 @@ getAllUsernames();
 console.log("Hello Earth!");
 }
 ```
+
+## NextJS
+
+### Overview
+
+- NextJS was a framework that was introduced because of some minor inconviniences in React
+- NextJS is both front end and backend framework (react is a frontend only)
+- In a React project, you have to maintain a separate Backend project for your API routes (you have to use react-router-dom)
+- React is not SEO Optimised (not exactly true today because of React Server components)
+- Waterfalling problem:
+  - this is when there are many requests to the server before everything is displayed to the user on UI.
+  - Eg: in react,
+    - client requests for landing page.
+    - server sends index.html
+    - index.html points to app.jsx and client requests the server again for app.jsx.
+    - server responds with this data.
