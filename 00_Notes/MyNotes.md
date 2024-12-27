@@ -3695,9 +3695,9 @@ console.log("Hello Earth!");
 
 ### Overview
 
-- NextJS was a framework that was introduced because of some minor inconviniences in React
-- NextJS is both front end and backend framework (react is a frontend only)
-- In a React project, you have to maintain a separate Backend project for your API routes (you have to use react-router-dom)
+- NextJS was a framework that was introduced because of some minor inconveniences in React
+- NextJS is both front end and back-end framework (react is a frontend only, so you have to maintain separate front-end and back-end framework)
+- In a React project, you cannot have routing out of the box. (you have to use react-router-dom)
 - React is not SEO Optimised (not exactly true today because of React Server components)
 - Waterfalling problem:
   - this is when there are many requests to the server before everything is displayed to the user on UI.
@@ -3706,3 +3706,192 @@ console.log("Hello Earth!");
     - server sends index.html
     - index.html points to app.jsx and client requests the server again for app.jsx.
     - server responds with this data.
+- NextJS allows File based routing
+- Bundle size optimizations, Static site Generation
+- NextJS app cannot be distributed via CDN.(A server needs to run always to do 'server side rendering')
+- Very opinionated (they want you to do some things in a specific way), so very hard to move away from it.
+
+### Creating an App
+
+```bash
+npx create-next-app@latest #command to create next js app
+#select Yes to all questions except ('would you like to use `src/` directory?', 'would you like to use Turbopac for next dev?' and 'would you like to customize the default import alias?')
+```
+
+### Some notes abou the App defaults
+- `next.config.mjs` - NextJS Confiruration file
+- `app/` - contains all code/components/ layouts/routes/APIs
+- Routing in NextJS
+  - Uses file based routing
+    - Eg: `app/page.tsx` can be accessed at  `localhost:3000/`
+    - `app/signup/page.tsx` can be accessed at `localhost:3000/signup`
+    - `app/user/content/page.tsx` can be accessed at `localhost:3000/user/content`
+  - If folder structure is like - `app/(auth)/signin/page.tsx`, `app/(auth)/signup/page.tsx`, then
+    - `app/(auth)/signin/page.tsx` can be accessed at `localhost:3000/signin`
+    - `app/(auth)/signup/page.tsx` can be accessed at `localhost:3000/signup`
+    - This is especially useful when there is a layout.
+- `app/layout.tsx`
+  - contains some defaults (like fonts)
+  - contains main page layout that is applied to all child pages(child pages can override the setting)
+  - individual folders can have their own layout.tsx file that will be applied to all pages in that folder.
+  ```typescript
+  import type { Metadata } from "next";
+  import { Geist, Geist_Mono } from "next/font/google";
+  import "./globals.css";
+
+  const geistSans = Geist({ //<-------GET FONTS
+    variable: "--font-geist-sans",
+    subsets: ["latin"],
+  });
+
+  const geistMono = Geist_Mono({//<-------GET FONTS
+    variable: "--font-geist-mono",
+    subsets: ["latin"],
+  });
+
+  export const metadata: Metadata = { //<------- Metadata about the app
+    title: "My todo App",
+    description: "Description of my todo app",
+  };
+
+  export default function RootLayout({children,}: Readonly<{children: React.ReactNode;}>) { //<--------- Default layout of the pages
+    return (
+       <html lang="en">
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+           <div className = 'border-b p-4'>MyTodos</div>
+           {children}
+        </body>
+      </html>
+    );
+  }
+  ```
+
+### Running the app
+- `npm run dev`
+- Check all options in `<ProjectRoot>/package.json --> Scripts section`
+
+
+### Fetching data in NextJS(loading.tsx)
+- when FE makes a request, and the next js server needs to get the data from backend, the request is made by the server. The server will wait for the data to be received, it renders the data and then responds to the request from the frontend.
+- This means that if there is a lag in receiving the response from backend, nothing is displayed to the user in the client. This could be handled in 2 ways.
+  - You can display a loading bar/ text to the user when they wait. This is how it is handled in React. This approach is not SEO optimized(the crawlers from google will not wait for the loading to go await, they will simply think there is nothing being shown in the website and will not rank the site properly.)
+  - make the user user wait till response is received(default behaviour in NextJS). The page does not load at all till the response is received and the rendering is completed in the server. This is the right approach for Home pages/ public pages where we need SEO optimization. For internal dashboards(like pages displayed after the user signs in, we should show loader while the user waits. Google crawlers do not need to crawl into such pages.)
+
+```typescript
+import axios from "axios";
+
+async function getUserDetails() {
+  const response = await axios.get("https://week-13-offline.kirattechnologies.workers.dev/api/v1/user/details")
+	return response.data;
+}
+
+export default async function Home() {
+  const userData = await getUserDetails();
+
+  return (
+    <div>
+      {userData.email}
+      {userData.name}
+    </div>
+  );
+}
+```
+
+- Alternate approach is to show loading in NextJS
+  - Create `loading.tsx` in the same folder as `page.tsx` and add the following code.
+  ```typescript
+  // app/signin/loading.tsx file
+
+  export default function Loading() {
+    return <div className="flex flex-col justify-center h-screen">
+        <div className="flex justify-center">
+            Loading...
+        </div>
+    </div>
+  }
+  ```
+  - Now 'Loading...' will be displayed while user waits for the data to be fetched.
+
+### Handling Backend Requests(routes.ts)
+- in the code below, we are fetching data from an external backend (url is hitting another server) 
+
+```typescript
+import axios from "axios";
+
+async function getUserDetails() {
+  const response = await axios.get("https://week-13-offline.kirattechnologies.workers.dev/api/v1/user/details")
+	return response.data;
+}
+
+export default async function Home() {
+  const userData = await getUserDetails();
+
+  return (
+    <div>
+      {userData.email}
+      {userData.name}
+    </div>
+  );
+}
+```
+
+- NodeJS can also do the work of a backend server.
+  - Create folder structure for the route (/api/v1/user/details in the api above)
+  ```text
+  app/
+    - api/
+      - v1/
+        - user/
+          - details/
+            - route.ts
+          
+  ```
+- Add following code inside `route.ts`
+
+```typescript
+import {NextResponse} from 'next/server';
+
+export function GET(){  //<----------get route
+  return NextResponse.json({
+    message: "response for GET call"
+  })
+}
+
+export function POST(){  //<----------post route
+  return NextResponse.json({
+    user: "testing",
+    emsil: "test@test.com"
+  })
+}
+
+export function PUT(){  //<----------put route
+  return NextResponse.json({
+    message: "data updated"
+  })
+}
+
+//Other routes
+```
+
+- Now replace the initial page.tsx code with the following API route
+
+```typescript
+import axios from "axios";
+
+async function getUserDetails() {
+  const response = await axios.get("http://localhost:3000/api/v1/user/details"); //<------------------
+	return response.data;
+}
+
+export default async function Home() {
+  const userData = await getUserDetails();
+
+  return (
+    <div>
+      {userData.email}
+      {userData.name}
+    </div>
+  );
+}
+```
+
