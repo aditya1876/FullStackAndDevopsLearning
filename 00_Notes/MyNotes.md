@@ -3726,10 +3726,53 @@ npx create-next-app@latest #command to create next js app
     - Eg: `app/page.tsx` can be accessed at  `localhost:3000/`
     - `app/signup/page.tsx` can be accessed at `localhost:3000/signup`
     - `app/user/content/page.tsx` can be accessed at `localhost:3000/user/content`
-  - If folder structure is like - `app/(auth)/signin/page.tsx`, `app/(auth)/signup/page.tsx`, then
+  - Route Groups:
+    - If folder structure is has () - `app/(auth)/signin/page.tsx`, `app/(auth)/signup/page.tsx`, then
     - `app/(auth)/signin/page.tsx` can be accessed at `localhost:3000/signin`
     - `app/(auth)/signup/page.tsx` can be accessed at `localhost:3000/signup`
     - This is especially useful when there is a layout.
+  - Dynamic Routes:
+    - slug: when the url routes are dynamic (eg - `www.example.com/123432` can be represented as `www.example.com/[id]`)
+    - folder structure should be - app/blog/[postid]/page.tsx
+    - all routes in following format will work(`http://localhost:3000/blog/1` or `http://localhost:3000/blog/sldkfjsldk`)
+    - Any other routes will not work (`http://localhost:3000/blog/1/test/123`)
+    - Following code will display the blog id in the body and some json placeholder content
+    ```typescript
+    //apps/blog/[postId]/page.tsx
+    import axios from "axios";
+    export default async function BlogPage({params}:undefined | string){
+      const postId = params.postId;
+      const resp = await axios.get(`https://jsonplaceholder.typicode.com/posts/${postId}`)
+      const data = resp.data;
+
+      return <div>
+        Blog Page {postId}
+        <br/>
+        Title: {data.title}
+        <br />
+        Description: {data.body}
+      </div>
+    }
+    ```
+  - CatchAll Segment
+    - When folder structure has `[...slug]`
+    - This will match anything - eg `app/[...posts]/test` or `app/[...posts]/test/user` or `app/[...posts]`
+    - Folder structure - `app/[courseId]/[...courseFolders]/page.tsx`
+    ```typescript
+    //FOLDER STRUCTURE - app/[courseId]/[...courseFolders]/page.tsx
+    export default function courseFolders({params}: undefined | string){
+      const courseId = params.courseId;
+      const folderList = params.courseFolders;
+
+      return <div>
+        Course Id: {courseId}
+        <br />
+        Folder List: {JSON.stringify(folderList)} 
+      </div>
+    }
+    ```
+
+
 - `app/layout.tsx`
   - contains some defaults (like fonts)
   - contains main page layout that is applied to all child pages(child pages can override the setting)
@@ -3894,4 +3937,137 @@ export default async function Home() {
   );
 }
 ```
+### Code till now
+```typescript
+//FOLDER STRUCTURE
+/**
+<projectName>
+  - app/
+    - page.tsx --> Home page / landing page
+    - lib/
+      - db.ts --> Db configuration
+    - signin/
+      - page.tsx --> signin front end code
+    - signup/
+      - page.tsx --> signup page frontend code
+    - api/
+      - v1
+        - signup
+          - route.ts ---> api routes from signup page
+        - signin
+          - route.ts ---> api routes from signin page
 
+*/
+
+//=======app/lib/db.ts========
+import {PrismaClient} from '@prisma/client'
+//following code ensures only 1 instance of db connection is created even if the app hot reloads again and again.
+//this problem only occurs in non-prod during development where the app hot reloads everytime something is changed in the app.
+const prismaClient: undefined | ReturnType<typeof PrismaClient> = globalThis.prismaClient ?? new PrismaClient();
+if(process.env.NODE_ENV !== 'production') globalThis.prismaClient = prismaClient
+export default prismaClient;
+
+//=======app/page.tsx=========
+import Image from "next/image";
+import Link from "next/link";
+export default function Home() {
+  return (
+    <>
+      <div className="w-screen h-screen flex items-center justify-center">
+        <h1 className="text-2xl">My Todo Application</h1>
+          <Link className="text-md border m-2" href="/signin">Sign In</Link>
+          <br />
+          <Link className="text-md border m-2" href="/signup">Sign Up</Link>
+      </div>
+    </>
+  );
+}
+
+//=======app/signin/page.tsx==
+"use client"
+import axios from "axios";
+import {ChangeEventHandler, useState} from "react";
+export default function signin(){
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  return <>
+    <div className='w-screen h-screen flex justify-center items-center'>
+      <div className='broder p-2'>
+        <input type="text" placeholder="Username" onChange={e=> {setUsername(e.target.value)}}></input>
+        <input type="password" placeholder="Password" onChange={e=> {setPassword(e.target.value)}}></input>
+        <button onClick={()=>{
+          axios.post("http://localhost:3000/api/v1/signin",{
+            username,
+            password
+          })
+        }}>Sign In</button>
+      </div>
+    </div>
+  </>
+}
+
+//=======app/signup/page.tsx==
+"use client"
+import axios from "axios";
+import {ChangeEventHandler, useState} from "react";
+import {useRouter} from "next/navigation";
+export default function signup(){
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter(); 
+
+  return <>
+    <div className='w-screen h-screen flex justify-center items-center'>
+      <div className='broder p-2'>
+        <input type="text" placeholder="Username" onChange={e => {setUsername(e.target.value)}}></input>
+        <input type="password" placeholder="Password" onChange={e => {setPassword(e.target.value)}}></input>
+        <button onClick={async ()=>{
+          await axios.post("http://localhost:3000/api/v1/signup",{
+            username,
+            password
+          })
+          router.push("/signin") //Redirect user to signin page after successful signup
+        }}>Sign Up</button>
+      </div>
+    </div>
+  </>
+}
+
+//=======app/api/v1/signin/route.ts===
+import {NextRequest, NextResponse} from "next/server";
+
+export async function POST(req: NextRequest){
+  const requestData = await req.json();
+  const username = requestData.username;
+  const password = requestData.password;
+
+  console.log(`Signing in with username: ${username} and password: ${password}`);
+
+  return NextResponse.json({
+    message:`Sign in successful with username: ${username} and password: ${password}` 
+  })
+}
+
+//=======app/api/v1/signup/route.ts===
+import {NextRequest, NextResponse} from "next/server";
+import prismaClient from "../../../lib/db.ts";
+
+export async function POST(req: NextRequest){
+  const requestData = await req.json();
+  const username = requestData.username;
+  const password = requestData.password;
+  console.log(`Signing up with ${username} and ${password}`);
+  
+  await prismaClient.user.create({
+    data:{
+      username: username,
+      password: password
+    }
+  });
+
+  return NextResponse.json({
+    message: `Sign up successful with username: ${username} and password: ${password}`
+  })
+}
+```
