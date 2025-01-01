@@ -3772,7 +3772,6 @@ npx create-next-app@latest #command to create next js app
     }
     ```
 
-
 - `app/layout.tsx`
   - contains some defaults (like fonts)
   - contains main page layout that is applied to all child pages(child pages can override the setting)
