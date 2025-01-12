@@ -3718,12 +3718,14 @@ npx create-next-app@latest #command to create next js app
 #select Yes to all questions except ('would you like to use `src/` directory?', 'would you like to use Turbopac for next dev?' and 'would you like to customize the default import alias?')
 ```
 
-### Some notes abou the App defaults
+### Some notes about the App defaults
+
 - `next.config.mjs` - NextJS Confiruration file
 - `app/` - contains all code/components/ layouts/routes/APIs
 - Routing in NextJS
+
   - Uses file based routing
-    - Eg: `app/page.tsx` can be accessed at  `localhost:3000/`
+    - Eg: `app/page.tsx` can be accessed at `localhost:3000/`
     - `app/signup/page.tsx` can be accessed at `localhost:3000/signup`
     - `app/user/content/page.tsx` can be accessed at `localhost:3000/user/content`
   - Route Groups:
@@ -3732,11 +3734,13 @@ npx create-next-app@latest #command to create next js app
     - `app/(auth)/signup/page.tsx` can be accessed at `localhost:3000/signup`
     - This is especially useful when there is a layout.
   - Dynamic Routes:
+
     - slug: when the url routes are dynamic (eg - `www.example.com/123432` can be represented as `www.example.com/[id]`)
     - folder structure should be - app/blog/[postid]/page.tsx
     - all routes in following format will work(`http://localhost:3000/blog/1` or `http://localhost:3000/blog/sldkfjsldk`)
     - Any other routes will not work (`http://localhost:3000/blog/1/test/123`)
     - Following code will display the blog id in the body and some json placeholder content
+
     ```typescript
     //apps/blog/[postId]/page.tsx
     import axios from "axios";
@@ -3754,10 +3758,13 @@ npx create-next-app@latest #command to create next js app
       </div>
     }
     ```
+
   - CatchAll Segment
+
     - When folder structure has `[...slug]`
     - This will match anything - eg `app/[...posts]/test` or `app/[...posts]/test/user` or `app/[...posts]`
     - Folder structure - `app/[courseId]/[...courseFolders]/page.tsx`
+
     ```typescript
     //FOLDER STRUCTURE - app/[courseId]/[...courseFolders]/page.tsx
     export default function courseFolders({params}: undefined | string){
@@ -3767,15 +3774,17 @@ npx create-next-app@latest #command to create next js app
       return <div>
         Course Id: {courseId}
         <br />
-        Folder List: {JSON.stringify(folderList)} 
+        Folder List: {JSON.stringify(folderList)}
       </div>
     }
     ```
 
 - `app/layout.tsx`
+
   - contains some defaults (like fonts)
   - contains main page layout that is applied to all child pages(child pages can override the setting)
   - individual folders can have their own layout.tsx file that will be applied to all pages in that folder.
+
   ```typescript
   import type { Metadata } from "next";
   import { Geist, Geist_Mono } from "next/font/google";
@@ -3809,11 +3818,12 @@ npx create-next-app@latest #command to create next js app
   ```
 
 ### Running the app
+
 - `npm run dev`
 - Check all options in `<ProjectRoot>/package.json --> Scripts section`
 
-
 ### Fetching data in NextJS(loading.tsx)
+
 - when FE makes a request, and the next js server needs to get the data from backend, the request is made by the server. The server will wait for the data to be received, it renders the data and then responds to the request from the frontend.
 - This means that if there is a lag in receiving the response from backend, nothing is displayed to the user in the client. This could be handled in 2 ways.
   - You can display a loading bar/ text to the user when they wait. This is how it is handled in React. This approach is not SEO optimized(the crawlers from google will not wait for the loading to go await, they will simply think there is nothing being shown in the website and will not rank the site properly.)
@@ -3824,7 +3834,7 @@ import axios from "axios";
 
 async function getUserDetails() {
   const response = await axios.get("https://week-13-offline.kirattechnologies.workers.dev/api/v1/user/details")
-	return response.data;
+ return response.data;
 }
 
 export default async function Home() {
@@ -3840,7 +3850,9 @@ export default async function Home() {
 ```
 
 - Alternate approach is to show loading in NextJS
+
   - Create `loading.tsx` in the same folder as `page.tsx` and add the following code.
+
   ```typescript
   // app/signin/loading.tsx file
 
@@ -3852,17 +3864,19 @@ export default async function Home() {
     </div>
   }
   ```
+
   - Now 'Loading...' will be displayed while user waits for the data to be fetched.
 
 ### Handling Backend Requests(routes.ts)
-- in the code below, we are fetching data from an external backend (url is hitting another server) 
+
+- in the code below, we are fetching data from an external backend (url is hitting another server)
 
 ```typescript
 import axios from "axios";
 
 async function getUserDetails() {
   const response = await axios.get("https://week-13-offline.kirattechnologies.workers.dev/api/v1/user/details")
-	return response.data;
+ return response.data;
 }
 
 export default async function Home() {
@@ -3879,6 +3893,7 @@ export default async function Home() {
 
 - NodeJS can also do the work of a backend server.
   - Create folder structure for the route (/api/v1/user/details in the api above)
+
   ```text
   app/
     - api/
@@ -3886,30 +3901,34 @@ export default async function Home() {
         - user/
           - details/
             - route.ts
-          
+
   ```
+
 - Add following code inside `route.ts`
 
 ```typescript
-import {NextResponse} from 'next/server';
+import { NextResponse } from "next/server";
 
-export function GET(){  //<----------get route
+export function GET() {
+  //<----------get route
   return NextResponse.json({
-    message: "response for GET call"
-  })
+    message: "response for GET call",
+  });
 }
 
-export function POST(){  //<----------post route
+export function POST() {
+  //<----------post route
   return NextResponse.json({
     user: "testing",
-    emsil: "test@test.com"
-  })
+    emsil: "test@test.com",
+  });
 }
 
-export function PUT(){  //<----------put route
+export function PUT() {
+  //<----------put route
   return NextResponse.json({
-    message: "data updated"
-  })
+    message: "data updated",
+  });
 }
 
 //Other routes
@@ -3922,7 +3941,7 @@ import axios from "axios";
 
 async function getUserDetails() {
   const response = await axios.get("http://localhost:3000/api/v1/user/details"); //<------------------
-	return response.data;
+ return response.data;
 }
 
 export default async function Home() {
@@ -3936,7 +3955,9 @@ export default async function Home() {
   );
 }
 ```
+
 ### Code till now
+
 ```typescript
 //FOLDER STRUCTURE
 /**
@@ -4014,7 +4035,7 @@ import {useRouter} from "next/navigation";
 export default function signup(){
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter(); 
+  const router = useRouter();
 
   return <>
     <div className='w-screen h-screen flex justify-center items-center'>
@@ -4044,7 +4065,7 @@ export async function POST(req: NextRequest){
   console.log(`Signing in with username: ${username} and password: ${password}`);
 
   return NextResponse.json({
-    message:`Sign in successful with username: ${username} and password: ${password}` 
+    message:`Sign in successful with username: ${username} and password: ${password}`
   })
 }
 
@@ -4057,7 +4078,7 @@ export async function POST(req: NextRequest){
   const username = requestData.username;
   const password = requestData.password;
   console.log(`Signing up with ${username} and ${password}`);
-  
+
   await prismaClient.user.create({
     data:{
       username: username,
