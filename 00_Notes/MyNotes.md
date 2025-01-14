@@ -3697,6 +3697,8 @@ console.log("Hello Earth!");
 
 - NextJS was a framework that was introduced because of some minor inconveniences in React
 - NextJS is both front end and back-end framework (react is a frontend only, so you have to maintain separate front-end and back-end framework)
+- NextJS elemenates the requirement for implementing cors.
+- Ease of deployment.
 - In a React project, you cannot have routing out of the box. (you have to use react-router-dom)
 - React is not SEO Optimised (not exactly true today because of React Server components)
 - Waterfalling problem:
@@ -3817,6 +3819,40 @@ npx create-next-app@latest #command to create next js app
   }
   ```
 
+  ```typescript
+  //LAYOUT FOR SPECIFIC FOLDERS (navbar appears for both signup and signin pages based on the layout.tsx from auth/ folder)
+
+  //Folder structure
+  //- app/
+  // - auth/
+  //  - signup/
+  //   - page.tsx
+  //  - signin/
+  //   - page.tsx
+  //  - layout.tsx
+  //- components/
+  // - navbar.tsx
+
+  //navbar.tsx
+  export function Navbar(){
+    return <div className= "border-b p-4"> My Todo App </div>
+  }
+
+  //layout.tsx
+  import {Navbar} from "../../components/navbar";
+
+  export default function AuthLayout({children}){
+    return <div>
+      <Navbar />
+      {children}
+    </div>
+  }
+
+  //all pages inside auth/ will now have a navbar at the top by default. No need to add the code for it.
+  //signup/page.tsx
+  //sigin/page.tsx
+  ```
+
 ### Running the app
 
 - `npm run dev`
@@ -3892,6 +3928,7 @@ export default async function Home() {
 ```
 
 - NodeJS can also do the work of a backend server.
+
   - Create folder structure for the route (/api/v1/user/details in the api above)
 
   ```text
